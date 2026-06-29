@@ -52,8 +52,13 @@
           </div>
         </div>
         
-        <!-- ユーザー認証セクション -->
+        <!-- ユーザー認証・接続ステータスセクション -->
         <div class="flex items-center gap-2">
+          <!-- モード表示バッジ -->
+          <span id="storage-mode-badge" class="text-[9px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-500">
+            ローカル保存モード
+          </span>
+
           <div id="user-info" class="hidden flex items-center gap-2">
             <img id="user-avatar" class="w-6 h-6 rounded-full border border-slate-200" src="" alt="avatar" onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=user'">
             <div class="text-right hidden sm:block">
@@ -64,7 +69,8 @@
               <i class="fa-solid fa-right-from-bracket"></i>
             </button>
           </div>
-          <div id="auth-triggers" class="flex gap-1.5">
+          
+          <div id="auth-triggers" class="flex gap-1.5 hidden">
             <button id="btn-login-google" class="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-[10px] font-bold py-1 px-2.5 rounded-md shadow-sm transition">
               <i class="fa-brands fa-google text-red-500"></i> 同期
             </button>
@@ -72,6 +78,11 @@
               ゲスト
             </button>
           </div>
+
+          <!-- Firebase接続設定を開くアドバンスドボタン -->
+          <button id="btn-open-db-settings" class="text-slate-400 hover:text-indigo-600 p-1 rounded-md text-xs transition" title="Firebase接続設定">
+            <i class="fa-solid fa-gear"></i>
+          </button>
         </div>
       </div>
     </header>
@@ -92,10 +103,6 @@
         <!-- 本棚グリッド -->
         <div id="folders-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           <!-- JSで動的にカードを挿入 -->
-          <div class="col-span-full text-center py-16 text-slate-400 bg-white rounded-2xl border border-slate-200 border-dashed">
-            <i class="fa-solid fa-book-open text-4xl mb-3 opacity-30 block"></i>
-            本棚に参考書がありません。<br>下の「新しい参考書を追加」から追加してみましょう！
-          </div>
         </div>
 
         <!-- 下部に配置された新しい参考書追加ボタン -->
@@ -196,7 +203,7 @@
               <div class="text-center min-w-[65px] flex-1">
                 <span class="text-[8px] font-bold text-emerald-500 block uppercase font-medium font-bold">正解 🟢</span>
                 <span id="stat-done" class="text-sm font-extrabold text-emerald-600">0</span>
-                <span class="text-[8px] text-emerald-400 font-medium block inline-unit">問</span>
+                <span class="text-[8px] text-emerald-400 font-medium block inline-unit font-normal">問</span>
               </div>
             </div>
           </div>
@@ -314,7 +321,7 @@
       <div class="p-4 space-y-4 overflow-y-auto flex-1">
         <div>
           <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">参考書の名称 *</label>
-          <input id="folder-input-title" type="text" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="例: 青チャートI+A, ターゲット1900, 名門の風">
+          <input id="folder-input-title" type="text" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="例: 青チャートI+A, ターゲット1900, 名問の風">
         </div>
         
         <!-- カラーピッカー -->
@@ -394,10 +401,48 @@
     </div>
   </div>
 
+  <!-- 【アドバンスド：Firebase独自設定モーダル】 -->
+  <div id="modal-db-settings" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 animate-in fade-in duration-100">
+    <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden flex flex-col">
+      <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+        <h3 class="font-bold text-base text-slate-900 flex items-center gap-1.5">
+          <i class="fa-solid fa-cloud-arrow-up text-indigo-500"></i> Firebase接続設定
+        </h3>
+        <button id="btn-close-db-settings" class="text-slate-400 hover:text-slate-600 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <div class="p-5 space-y-4 text-xs overflow-y-auto max-h-[70vh]">
+        <p class="text-slate-500 leading-relaxed">
+          通常、GitHub Pagesなどの環境では<strong>「ローカル保存モード」</strong>で安全・高速に動作します。
+          スマホとPCなど、複数デバイスで進捗を完全同期したい場合のみ、ご自身のFirebase Webアプリ構成（JSON形式）をペーストしてクラウド保存に切り替えてください。
+        </p>
+        <div>
+          <label class="block font-bold text-slate-500 mb-1">Firebase Configuration (JSONオブジェクト)</label>
+          <textarea id="db-settings-config-input" rows="8" class="w-full font-mono border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-slate-900 text-slate-100" placeholder='{
+  "apiKey": "AIzaSy...",
+  "authDomain": "your-app.firebaseapp.com",
+  "projectId": "your-app",
+  "storageBucket": "your-app.appspot.com",
+  "messagingSenderId": "...",
+  "appId": "..."
+}'></textarea>
+        </div>
+      </div>
+      <div class="p-4 bg-slate-50 border-t border-slate-100 flex justify-between gap-2 items-center">
+        <button id="btn-reset-db-settings" class="text-rose-600 hover:text-rose-700 font-bold text-xs px-3 py-2 hover:bg-rose-50 rounded-lg transition">
+          ローカル保存に戻す
+        </button>
+        <div class="flex gap-2">
+          <button id="btn-cancel-db-settings" class="px-4 py-2 text-xs font-semibold text-slate-500 hover:text-slate-700 transition">キャンセル</button>
+          <button id="btn-save-db-settings" class="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition">保存して再起動</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- メッセージ通知用カスタムポップアップ -->
   <div id="toast-container" class="fixed bottom-4 right-4 z-50 space-y-2 pointer-events-none"></div>
 
-  <!-- ==================== Firebase Setup & Logic ==================== -->
+  <!-- ==================== Firebase Setup & Hybrid Storage Logic ==================== -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { 
@@ -423,16 +468,30 @@
       serverTimestamp
     } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // Canvas Environment Variables
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'studyflow-preview-app';
-    const firebaseConfig = JSON.parse(__firebase_config);
+    // 1. 保存モード（クラウドかローカルか）の判定とFirebase接続キーの取得
+    let storageMode = 'local'; // 'local' | 'cloud'
+    let appId = 'studyflow-local-app';
+    let firebaseConfig = null;
+    let db = null;
+    let auth = null;
 
-    // Firebase Init
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+    // プレビュー環境の自動Configまたはユーザーによる設定Configがあるか確認
+    try {
+      const savedConfig = localStorage.getItem('studyflow_custom_firebase_config');
+      if (savedConfig) {
+        firebaseConfig = JSON.parse(savedConfig);
+        storageMode = 'cloud';
+        appId = 'studyflow-custom-app';
+      } else if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+        firebaseConfig = JSON.parse(__firebase_config);
+        storageMode = 'cloud';
+        appId = typeof __app_id !== 'undefined' ? __app_id : 'studyflow-preview-app';
+      }
+    } catch (e) {
+      console.warn("Failed to parse Firebase configuration, falling back to LocalStorage.");
+    }
 
-    // Global State
+    // 2. グローバルアプリケーション状態
     let currentUser = null;
     let folders = []; // フォルダ（参考書）
     let sheets = [];  // 進捗シート
@@ -478,6 +537,8 @@
     const userAvatar = document.getElementById('user-avatar');
     const userName = document.getElementById('user-name');
     const authStatus = document.getElementById('auth-status');
+    const storageModeBadge = document.getElementById('storage-mode-badge');
+    
     const btnAddFolder = document.getElementById('btn-add-folder');
     const btnLoginGoogle = document.getElementById('btn-login-google');
     const btnLoginAnon = document.getElementById('btn-login-anon');
@@ -541,6 +602,15 @@
     const inputSheetCustomUnit = document.getElementById('sheet-input-custom-unit');
     const inputSheetDesc = document.getElementById('sheet-input-desc');
     const btnSaveSheet = document.getElementById('btn-save-sheet');
+
+    // Advanced: Firebase Settings Modal Elements
+    const btnOpenDbSettings = document.getElementById('btn-open-db-settings');
+    const modalDbSettings = document.getElementById('modal-db-settings');
+    const btnCloseDbSettings = document.getElementById('btn-close-db-settings');
+    const btnCancelDbSettings = document.getElementById('btn-cancel-db-settings');
+    const btnResetDbSettings = document.getElementById('btn-reset-db-settings');
+    const btnSaveDbSettings = document.getElementById('btn-save-db-settings');
+    const dbSettingsConfigInput = document.getElementById('db-settings-config-input');
 
     // ==================== HELPERS ====================
     function escapeHTML(str) {
@@ -637,82 +707,196 @@
       });
     }
 
-    // ==================== AUTHENTICATION (RULE 3) ====================
-    const initAuth = async () => {
-      buildPickers();
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
+    // ==================== LOCAL STORAGE BACKEND (Setting-free fallback) ====================
+    const LocalBackend = {
+      loadData: function() {
+        try {
+          folders = JSON.parse(localStorage.getItem('studyflow_folders') || '[]');
+          sheets = JSON.parse(localStorage.getItem('studyflow_sheets') || '[]');
+          
+          // 日付順ソート
+          folders.sort((a, b) => b.createdAt - a.createdAt);
+          sheets.sort((a, b) => b.createdAt - a.createdAt);
+        } catch(e) {
+          console.error("Local data loading error, resetting storage.", e);
+          folders = [];
+          sheets = [];
         }
-      } catch (err) {
-        showToast("ログインの初期化に失敗しました。", "error");
-      } finally {
-        spinner.classList.add('hidden');
-        appEl.classList.remove('hidden');
+        renderFoldersHome();
+        if (currentFolderId) {
+          const folder = folders.find(f => f.id === currentFolderId);
+          if (folder) renderFolderDetail(folder);
+        }
+        if (currentSheetId) {
+          const sheet = sheets.find(s => s.id === currentSheetId);
+          if (sheet) renderSheetDetail(sheet);
+        }
+      },
+      saveFolders: function() {
+        localStorage.setItem('studyflow_folders', JSON.stringify(folders));
+        renderFoldersHome();
+      },
+      saveSheets: function() {
+        localStorage.setItem('studyflow_sheets', JSON.stringify(sheets));
+        renderSheetsList();
+        if (currentSheetId) {
+          const sheet = sheets.find(s => s.id === currentSheetId);
+          if (sheet) renderSheetDetail(sheet);
+        }
+      },
+      addFolder: function(title, desc, color, icon) {
+        const newFolder = {
+          id: 'folder_' + Date.now(),
+          title, desc, color, icon,
+          createdAt: Math.floor(Date.now() / 1000)
+        };
+        folders.unshift(newFolder);
+        this.saveFolders();
+        currentFolderId = newFolder.id;
+        openFolderDetail(newFolder.id);
+        showToast("参考書を追加しました！", "success");
+      },
+      updateFolder: function(id, title, desc, color, icon) {
+        folders = folders.map(f => f.id === id ? { ...f, title, desc, color, icon } : f);
+        this.saveFolders();
+        const f = folders.find(folder => folder.id === id);
+        if (f) renderFolderDetail(f);
+        showToast("参考書を更新しました", "success");
+      },
+      deleteFolder: function(id) {
+        // 子シートも削除
+        sheets = sheets.filter(s => s.folderId !== id);
+        localStorage.setItem('studyflow_sheets', JSON.stringify(sheets));
+        // フォルダ削除
+        folders = folders.filter(f => f.id !== id);
+        this.saveFolders();
+        switchView('home');
+        showToast("参考書を削除しました", "info");
+      },
+      addSheet: function(folderId, title, totalCount, unitType, desc) {
+        const newSheet = {
+          id: 'sheet_' + Date.now(),
+          folderId, title, totalCount, unitType, desc,
+          progress: {},
+          createdAt: Math.floor(Date.now() / 1000)
+        };
+        sheets.unshift(newSheet);
+        this.saveSheets();
+        currentSheetId = newSheet.id;
+        openSheetDetail(newSheet.id);
+        showToast("進捗シートを追加しました", "success");
+      },
+      updateSheet: function(id, title, total, unitType, desc, progress) {
+        sheets = sheets.map(s => s.id === id ? { ...s, title, totalCount: total, unitType, desc, progress } : s);
+        this.saveSheets();
+        showToast("シートを更新しました", "success");
+      },
+      deleteSheet: function(id) {
+        sheets = sheets.filter(s => s.id !== id);
+        this.saveSheets();
+        if (currentFolderId && folders.find(f => f.id === currentFolderId)) {
+          renderFolderDetail(folders.find(f => f.id === currentFolderId));
+          switchView('folder');
+        } else {
+          switchView('home');
+        }
+        showToast("シートを削除しました", "info");
+      },
+      updateQuestion: function(sheetId, qNum, newStatus) {
+        sheets = sheets.map(s => {
+          if (s.id === sheetId) {
+            const progress = { ...s.progress };
+            const key = qNum.toString();
+            if (newStatus === 0) delete progress[key];
+            else progress[key] = newStatus;
+            return { ...s, progress };
+          }
+          return s;
+        });
+        this.saveSheets();
+      },
+      updateBulk: function(sheetId, start, end, action) {
+        sheets = sheets.map(s => {
+          if (s.id === sheetId) {
+            const progress = { ...s.progress };
+            for (let i = start; i <= end; i++) {
+              const key = i.toString();
+              if (action === 0) delete progress[key];
+              else progress[key] = action;
+            }
+            return { ...s, progress };
+          }
+          return s;
+        });
+        this.saveSheets();
+        showToast(`${start}〜${end}を一括更新しました！`, "success");
       }
     };
 
-    onAuthStateChanged(auth, (user) => {
-      currentUser = user;
-      if (user) {
-        authTriggers.classList.add('hidden');
-        userInfo.classList.remove('hidden');
-        userAvatar.src = user.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.uid}`;
-        userName.textContent = user.displayName || "匿名ユーザー";
-        authStatus.textContent = user.isAnonymous ? "ゲスト接続" : "同期中";
-        subscribeData(user.uid);
-      } else {
+    // ==================== STORAGE & REBOOT CONTROLLER ====================
+    const startApp = async () => {
+      buildPickers();
+      
+      if (storageMode === 'cloud' && firebaseConfig) {
+        // クラウド保存（Firebase）での接続確立を試みる
+        storageModeBadge.textContent = "クラウド同期モード";
+        storageModeBadge.className = "text-[9px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-600";
         authTriggers.classList.remove('hidden');
-        userInfo.classList.add('hidden');
-        foldersGrid.innerHTML = `
-          <div class="col-span-full text-center py-16 text-slate-400 bg-white rounded-2xl border border-slate-200">
-            <i class="fa-solid fa-lock text-4xl mb-3 opacity-30 block"></i>
-            <p class="text-sm font-semibold text-slate-600">データを保存するには、ログインまたはゲスト接続を開始してください。</p>
-          </div>
-        `;
-        folderCountEl.textContent = '0';
-        switchView('home');
-        folders = [];
-        sheets = [];
-        currentFolderId = null;
-        currentSheetId = null;
-      }
-    });
 
-    btnLoginGoogle.addEventListener('click', async () => {
-      try {
-        spinner.classList.remove('hidden');
-        await signInWithPopup(auth, new GoogleAuthProvider());
-        showToast("Googleでログインしました！", "success");
-      } catch (err) {
-        showToast("ログインが失敗しました。", "error");
-      } finally {
-        spinner.classList.add('hidden');
-      }
-    });
-
-    btnLoginAnon.addEventListener('click', async () => {
-      try {
-        spinner.classList.remove('hidden');
-        await signInAnonymously(auth);
-        showToast("一時アカウント（ゲスト）で開始しました。", "info");
-      } catch (err) {
-        showToast("ログインに失敗しました。", "error");
-      } finally {
-        spinner.classList.add('hidden');
-      }
-    });
-
-    btnLogout.addEventListener('click', async () => {
-      if (confirm("ログアウトしますか？")) {
         try {
-          await signOut(auth);
-          showToast("ログアウトしました", "info");
-        } catch (err) {
-          showToast("エラーが発生しました", "error");
+          // Firebaseアプリ初期化 & auth/db設定
+          const app = initializeApp(firebaseConfig);
+          auth = getAuth(app);
+          db = getFirestore(app);
+
+          // プレビュー環境用初期カスタムトークン、または匿名サインイン (RULE 3)
+          if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+            await signInWithCustomToken(auth, __initial_auth_token);
+          } else {
+            // クラウド構成はあるがトークンがない場合は匿名ログインを開始
+            await signInAnonymously(auth);
+          }
+
+          onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            if (user) {
+              authTriggers.classList.add('hidden');
+              userInfo.classList.remove('hidden');
+              userAvatar.src = user.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.uid}`;
+              userName.textContent = user.displayName || "匿名ユーザー";
+              authStatus.textContent = user.isAnonymous ? "ゲスト接続" : "同期中";
+              subscribeData(user.uid);
+            }
+          });
+
+        } catch(e) {
+          console.error("Firebase connection failed. Forcing Local Fallback Mode.", e);
+          showToast("クラウド同期サーバーへの接続に失敗しました。ローカル保存に切り替えます。", "error");
+          enableLocalFallback();
+        } finally {
+          spinner.classList.add('hidden');
+          appEl.classList.remove('hidden');
         }
+
+      } else {
+        // ローカルストレージでの起動（GitHub Pagesなどでは即時こちらで起動）
+        enableLocalFallback();
       }
-    });
+    };
+
+    function enableLocalFallback() {
+      storageMode = 'local';
+      storageModeBadge.textContent = "ローカル保存モード";
+      storageModeBadge.className = "text-[9px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-500";
+      authTriggers.classList.add('hidden');
+      userInfo.classList.add('hidden');
+      
+      // ローカルストレージから即座に復元
+      LocalBackend.loadData();
+      
+      spinner.classList.add('hidden');
+      appEl.classList.remove('hidden');
+    }
 
     // ==================== FIRESTORE DATA SYNC ====================
     let unsubscribeFoldersFn = null;
@@ -1069,6 +1253,11 @@
 
     // ★重要バグ修正: トランザクション的確実アップデート (単体) ★
     async function updateQuestionStatus(sheetId, qNum, newStatus) {
+      if (storageMode === 'local') {
+        LocalBackend.updateQuestion(sheetId, qNum, newStatus);
+        return;
+      }
+
       if (!currentUser) return;
       const sheetRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'sheets', sheetId);
       
@@ -1117,11 +1306,16 @@
     });
 
     btnDeleteFolder.addEventListener('click', async () => {
-      if (!currentUser || !currentFolderId) return;
       const folder = folders.find(f => f.id === currentFolderId);
       if (!folder) return;
 
       if (confirm(`本当に「${folder.title}」を削除しますか？\n中に入っているすべての進捗シートとチェックデータも完全に削除されます。`)) {
+        if (storageMode === 'local') {
+          LocalBackend.deleteFolder(currentFolderId);
+          return;
+        }
+
+        if (!currentUser) return;
         try {
           const folderSheets = sheets.filter(s => s.folderId === currentFolderId);
           for (const s of folderSheets) {
@@ -1150,8 +1344,18 @@
         showToast("参考書の名称を入力してください", "error");
         return;
       }
-      if (!currentUser) return;
 
+      if (storageMode === 'local') {
+        if (editingFolderId) {
+          LocalBackend.updateFolder(editingFolderId, title, desc, color, icon);
+        } else {
+          LocalBackend.addFolder(title, desc, color, icon);
+        }
+        modalFolder.classList.add('hidden');
+        return;
+      }
+
+      if (!currentUser) return;
       btnSaveFolder.disabled = true;
       try {
         if (editingFolderId) {
@@ -1217,11 +1421,16 @@
     });
 
     btnDeleteSheet.addEventListener('click', async () => {
-      if (!currentUser || !currentSheetId) return;
       const sheet = sheets.find(s => s.id === currentSheetId);
       if (!sheet) return;
 
       if (confirm(`進捗シート「${sheet.title}」を削除してよろしいですか？記録データも消失します。`)) {
+        if (storageMode === 'local') {
+          LocalBackend.deleteSheet(currentSheetId);
+          return;
+        }
+
+        if (!currentUser) return;
         try {
           await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'sheets', currentSheetId));
           showToast("シートを削除しました", "info");
@@ -1264,19 +1473,34 @@
         showToast("総数は1〜2000の範囲で指定してください", "error");
         return;
       }
+
+      if (storageMode === 'local') {
+        if (editingSheetId) {
+          const sObj = sheets.find(s => s.id === editingSheetId);
+          const prog = sObj ? sObj.progress || {} : {};
+          const cleanProg = {};
+          for (let k in prog) {
+            if (parseInt(k) <= total) cleanProg[k] = prog[k];
+          }
+          LocalBackend.updateSheet(editingSheetId, title, total, unitValue, desc, cleanProg);
+        } else {
+          LocalBackend.addSheet(currentFolderId, title, total, unitValue, desc);
+        }
+        modalSheet.classList.add('hidden');
+        return;
+      }
+
       if (!currentUser || !currentFolderId) return;
 
       btnSaveSheet.disabled = true;
       try {
         if (editingSheetId) {
-          // 最新の進捗データを取得しつつ整合性をとる
           const sheetRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'sheets', editingSheetId);
           const docSnap = await getDoc(sheetRef);
           let newProgress = {};
           if (docSnap.exists()) {
             const data = docSnap.data();
             const prog = data.progress || {};
-            // 総数を超えた古いマークデータを整理
             for (let key in prog) {
               if (parseInt(key) <= total) newProgress[key] = prog[key];
             }
@@ -1306,10 +1530,8 @@
       }
     });
 
-    // ==================== ★重要バグ修正: トランザクション的一括アップデート ★ ====================
+    // ==================== ★まとめて更新：トランザクション的一括アップデート ★ ====================
     btnApplyBulk.addEventListener('click', async () => {
-      if (!currentUser || !currentSheetId) return;
-
       const sheet = sheets.find(s => s.id === currentSheetId);
       if (!sheet) return;
 
@@ -1325,15 +1547,20 @@
       }
 
       if (confirm(`${start}〜${end}${unit}を一括変更してよろしいですか？`)) {
-        
-        // UX強化：ボタンをスピナーにして連打防止
+        if (storageMode === 'local') {
+          LocalBackend.updateBulk(currentSheetId, start, end, action);
+          bulkStart.value = '';
+          bulkEnd.value = '';
+          return;
+        }
+
+        if (!currentUser) return;
         btnApplyBulk.disabled = true;
         btnApplyBulk.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
         const sheetRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'sheets', currentSheetId);
         
         try {
-          // 最も安全な方法：データベースから最新状態を取得して一括書き換え
           const docSnap = await getDoc(sheetRef);
           if (!docSnap.exists()) throw new Error("シートが見つかりません");
           
@@ -1341,7 +1568,7 @@
           const newProgress = currentData.progress ? { ...currentData.progress } : {};
           
           for (let i = start; i <= end; i++) {
-            const key = i.toString(); // 確実に文字列キーで管理する
+            const key = i.toString();
             if (action === 0) {
               delete newProgress[key];
             } else {
@@ -1358,16 +1585,60 @@
           console.error("Bulk update error:", err);
           showToast("一括更新に失敗しました。もう一度お試しください。", "error");
         } finally {
-          // ボタンの状態を元に戻す
           btnApplyBulk.disabled = false;
           btnApplyBulk.textContent = '適用';
         }
       }
     });
 
-    // アプリ初期化
+    // ==================== ADVANCED: FIREBASE CONNECTION SETTINGS ====================
+    btnOpenDbSettings.addEventListener('click', () => {
+      const currentConfig = localStorage.getItem('studyflow_custom_firebase_config') || '';
+      dbSettingsConfigInput.value = currentConfig;
+      modalDbSettings.classList.remove('hidden');
+    });
+
+    btnCloseDbSettings.addEventListener('click', () => modalDbSettings.classList.add('hidden'));
+    btnCancelDbSettings.addEventListener('click', () => modalDbSettings.classList.add('hidden'));
+
+    btnResetDbSettings.addEventListener('click', () => {
+      if (confirm("Firebaseの設定をクリアし、設定不要な『ローカル保存モード』に戻しますか？（現在のローカル内のデータが有効化されます）")) {
+        localStorage.removeItem('studyflow_custom_firebase_config');
+        modalDbSettings.classList.add('hidden');
+        showToast("設定をクリアしました。再起動します...", "info");
+        setTimeout(() => location.reload(), 1000);
+      }
+    });
+
+    btnSaveDbSettings.addEventListener('click', () => {
+      const configStr = dbSettingsConfigInput.value.trim();
+      
+      if (!configStr) {
+        showToast("設定を入力するか、「ローカル保存に戻す」を実行してください", "error");
+        return;
+      }
+
+      try {
+        // 入力したJSONのパースが通るかテスト
+        const configJson = JSON.parse(configStr);
+        if (!configJson.apiKey || !configJson.projectId) {
+          throw new Error("Required fields 'apiKey' or 'projectId' are missing.");
+        }
+
+        localStorage.setItem('studyflow_custom_firebase_config', configStr);
+        modalDbSettings.classList.add('hidden');
+        showToast("設定を保存しました！再起動します...", "success");
+        setTimeout(() => location.reload(), 1200);
+
+      } catch(err) {
+        showToast("有効なFirebaseのJSON構成ではありません。記述内容を今一度ご確認ください。", "error");
+        console.error("Config check error: ", err);
+      }
+    });
+
+    // 起動
     window.onload = () => {
-      initAuth();
+      startApp();
     };
 
   </script>
