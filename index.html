@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html lang="ja" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StudyFlow - 究極の受験対策・勉強進捗記録</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      font-family: 'Inter', 'Noto Sans JP', sans-serif;
+    }
+    /* カスタムスクロールバー */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 h-full flex flex-col antialiased">
+
+  <!-- アプリ本体コンテナ -->
+  <div id="app" class="flex flex-col h-full hidden">
+    
+    <!-- スリムヘッダー -->
+    <header class="bg-white border-b border-slate-200 px-4 py-1.5 shrink-0 z-10 shadow-sm">
+      <div class="max-w-5xl mx-auto flex flex-row items-center justify-between gap-2">
+        <div class="flex items-center gap-2 cursor-pointer transition hover:opacity-80" id="header-logo">
+          <div class="bg-indigo-600 text-white p-1.5 rounded-lg shadow-sm">
+            <i class="fa-solid fa-graduation-cap text-sm"></i>
+          </div>
+          <div>
+            <h1 class="text-base font-bold tracking-tight text-slate-900 leading-none">StudyFlow</h1>
+            <span class="text-[9px] text-slate-400 font-medium">進捗＆弱点管理</span>
+          </div>
+        </div>
+        
+        <!-- ユーザー認証セクション -->
+        <div class="flex items-center gap-2">
+          <div id="user-info" class="hidden flex items-center gap-2">
+            <img id="user-avatar" class="w-6 h-6 rounded-full border border-slate-200" src="" alt="avatar" onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=user'">
+            <div class="text-right hidden sm:block">
+              <p id="user-name" class="text-[10px] font-semibold text-slate-700 leading-none"></p>
+              <p id="auth-status" class="text-[8px] text-emerald-600 font-medium leading-none mt-0.5"></p>
+            </div>
+            <button id="btn-logout" class="text-[10px] text-slate-400 hover:text-rose-600 px-2 py-1 rounded-md hover:bg-slate-50 transition" title="ログアウト">
+              <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+          </div>
+          <div id="auth-triggers" class="flex gap-1.5">
+            <button id="btn-login-google" class="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-[10px] font-bold py-1 px-2.5 rounded-md shadow-sm transition">
+              <i class="fa-brands fa-google text-red-500"></i> 同期
+            </button>
+            <button id="btn-login-anon" class="bg-slate-100 text-slate-600 hover:bg-slate-200 text-[10px] font-bold py-1 px-2 rounded-md transition">
+              ゲスト
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- メインコンテンツ領域 -->
+    <main class="flex-1 overflow-hidden relative max-w-5xl w-full mx-auto">
+      
+      <!-- ==================== VIEW 1: ホーム画面 (本棚ビュー) ==================== -->
+      <section id="view-home" class="absolute inset-0 overflow-y-auto p-4 md:p-6 flex flex-col gap-5">
+        <div>
+          <h2 class="text-base font-bold text-slate-800 flex items-center gap-1.5">
+            <i class="fa-solid fa-book-bookmark text-indigo-500"></i>
+            本棚 (<span id="folder-count">0</span>)
+          </h2>
+          <p class="text-xs text-slate-400 mt-1">複数の問題集やシリーズを大きな参考書として管理できます。</p>
+        </div>
+
+        <!-- 本棚グリッド -->
+        <div id="folders-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <!-- JSで動的にカードを挿入 -->
+          <div class="col-span-full text-center py-16 text-slate-400 bg-white rounded-2xl border border-slate-200 border-dashed">
+            <i class="fa-solid fa-book-open text-4xl mb-3 opacity-30 block"></i>
+            本棚に参考書がありません。<br>下の「新しい参考書を追加」から追加してみましょう！
+          </div>
+        </div>
+
+        <!-- 下部に配置された新しい参考書追加ボタン -->
+        <div class="mt-4 flex justify-center pb-8">
+          <button id="btn-add-folder" class="w-full sm:w-auto min-w-[280px] bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm py-3 px-6 rounded-xl transition shadow-md shadow-indigo-100 flex items-center justify-center gap-2">
+            <i class="fa-solid fa-folder-plus text-base"></i> 新しい参考書を追加
+          </button>
+        </div>
+      </section>
+
+      <!-- ==================== VIEW 2: 参考書詳細画面 (シート一覧) ==================== -->
+      <section id="view-folder-detail" class="absolute inset-0 overflow-y-auto p-4 md:p-6 hidden flex flex-col gap-5">
+        
+        <!-- ナビゲーションバー -->
+        <div class="flex items-center justify-between shrink-0">
+          <button id="btn-folder-back-home" class="flex items-center gap-1.5 text-slate-600 hover:text-indigo-600 font-bold text-xs py-1.5 px-2.5 rounded-lg hover:bg-white border border-transparent hover:border-slate-200 transition">
+            <i class="fa-solid fa-arrow-left"></i> 本棚に戻る
+          </button>
+
+          <div class="flex items-center gap-1.5">
+            <button id="btn-edit-folder" class="bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 py-1.5 px-2.5 rounded-lg text-xs transition">
+              <i class="fa-regular fa-pen-to-square"></i> <span class="hidden sm:inline ml-1">参考書を編集</span>
+            </button>
+            <button id="btn-delete-folder" class="bg-white border border-slate-200 text-rose-600 hover:bg-rose-50 py-1.5 px-2.5 rounded-lg text-xs transition">
+              <i class="fa-regular fa-trash-can"></i> <span class="hidden sm:inline ml-1">参考書を削除</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 参考書の概要情報 -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex items-start gap-3">
+          <div id="folder-detail-icon-wrapper" class="p-2.5 rounded-xl mt-1">
+            <i id="folder-detail-icon" class="fa-solid fa-book text-xl"></i>
+          </div>
+          <div>
+            <h2 id="current-folder-title" class="text-lg font-bold text-slate-900 leading-tight">参考書名</h2>
+            <p id="current-folder-desc" class="text-xs text-slate-500 mt-1">学習メモや目標</p>
+          </div>
+        </div>
+
+        <!-- 進捗シート（子リスト） -->
+        <div class="flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">登録中の進捗シート</h3>
+            <button id="btn-add-sheet" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-1.5 px-3 rounded-lg transition">
+              <i class="fa-solid fa-plus mr-1"></i> 進捗シートを追加
+            </button>
+          </div>
+
+          <div id="sheets-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <!-- JSで動的に子シートを挿入 -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== VIEW 3: 個別進捗シート画面 (チェックグリッド) ==================== -->
+      <section id="view-sheet-detail" class="absolute inset-0 overflow-y-auto p-4 md:p-6 hidden flex flex-col gap-4">
+        
+        <!-- ナビゲーションバー -->
+        <div class="flex items-center justify-between shrink-0">
+          <button id="btn-sheet-back-folder" class="flex items-center gap-1.5 text-slate-600 hover:text-indigo-600 font-bold text-xs py-1.5 px-2.5 rounded-lg hover:bg-white border border-transparent hover:border-slate-200 transition">
+            <i class="fa-solid fa-arrow-left"></i> 参考書の中身に戻る
+          </button>
+
+          <div class="flex items-center gap-1.5">
+            <button id="btn-edit-sheet" class="bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 py-1.5 px-2.5 rounded-lg text-xs transition">
+              <i class="fa-regular fa-pen-to-square"></i> <span class="hidden sm:inline ml-1">シート編集</span>
+            </button>
+            <button id="btn-delete-sheet" class="bg-white border border-slate-200 text-rose-600 hover:bg-rose-50 py-1.5 px-2.5 rounded-lg text-xs transition">
+              <i class="fa-regular fa-trash-can"></i> <span class="hidden sm:inline ml-1">シート削除</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- シート詳細情報 & 統計 -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <span id="current-sheet-badge" class="bg-indigo-50 text-indigo-700 text-[10px] font-bold px-2 py-0.5 rounded-md inline-block mb-1">
+                シート
+              </span>
+              <h2 id="current-sheet-title" class="text-lg font-bold text-slate-900 leading-tight">シートタイトル</h2>
+              <p id="current-sheet-desc" class="text-xs text-slate-500 mt-1">シートの学習計画</p>
+            </div>
+
+            <!-- 数値統計 -->
+            <div class="grid grid-cols-3 gap-1 sm:gap-3 bg-slate-50 p-2.5 rounded-xl self-start md:self-auto w-full md:w-auto">
+              <div class="text-center min-w-[65px] flex-1">
+                <span class="text-[8px] font-bold text-slate-400 block uppercase">総数</span>
+                <span id="stat-total" class="text-sm font-extrabold text-slate-700">0</span>
+                <span class="text-[8px] text-slate-400 font-medium block inline-unit">問</span>
+              </div>
+              <div class="text-center border-x border-slate-200 px-1 sm:px-3 min-w-[65px] flex-1">
+                <span class="text-[8px] font-bold text-rose-500 block uppercase">不正解 ❌</span>
+                <span id="stat-incorrect" class="text-sm font-extrabold text-rose-600">0</span>
+                <span class="text-[8px] text-rose-400 font-medium block inline-unit">問</span>
+              </div>
+              <div class="text-center min-w-[65px] flex-1">
+                <span class="text-[8px] font-bold text-emerald-500 block uppercase font-medium font-bold">正解 🟢</span>
+                <span id="stat-done" class="text-sm font-extrabold text-emerald-600">0</span>
+                <span class="text-[8px] text-emerald-400 font-medium block inline-unit">問</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 進捗バー -->
+          <div class="mt-4">
+            <div class="flex justify-between items-center text-xs font-bold text-slate-600 mb-1">
+              <span class="flex items-center gap-1"><i class="fa-solid fa-chart-line text-indigo-500"></i> 進捗状況</span>
+              <span id="stat-percent" class="text-indigo-600 font-bold">0%</span>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden flex">
+              <div id="bar-done" class="bg-emerald-500 h-full transition-all duration-300" style="width: 0%"></div>
+              <div id="bar-incorrect" class="bg-rose-500 h-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 一括操作ツールバー -->
+        <div class="bg-white rounded-xl border border-slate-200 p-3 shadow-sm flex flex-col lg:flex-row gap-3 items-center justify-between shrink-0">
+          <!-- 範囲選択一括更新 -->
+          <div class="w-full lg:w-auto flex flex-col sm:flex-row items-start sm:items-center gap-2">
+            <span class="text-xs font-bold text-slate-600 shrink-0"><i class="fa-solid fa-wand-magic-sparkles text-indigo-500 mr-1"></i>まとめて更新:</span>
+            <div class="flex items-center gap-1 w-full sm:w-auto">
+              <input id="bulk-start" type="number" min="1" max="2000" class="w-14 border border-slate-300 rounded-lg p-1 text-center text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="1">
+              <span class="text-xs text-slate-400">〜</span>
+              <input id="bulk-end" type="number" min="1" max="2000" class="w-14 border border-slate-300 rounded-lg p-1 text-center text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="50">
+              <span class="text-xs text-slate-400"><span class="inline-unit">問</span>を</span>
+              
+              <select id="bulk-action" class="border border-slate-300 rounded-lg p-1 text-xs text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white font-medium">
+                <option value="2">正解 🟢</option>
+                <option value="1">不正解 ❌</option>
+                <option value="0">未着手 ⚪️</option>
+              </select>
+              <button id="btn-apply-bulk" class="min-w-[60px] bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-1.5 px-2.5 rounded-md transition shrink-0 flex items-center justify-center">
+                適用
+              </button>
+            </div>
+          </div>
+
+          <!-- 操作説明 -->
+          <div class="text-[9px] text-slate-400 flex items-center bg-slate-50 p-1.5 rounded-lg w-full lg:w-auto justify-center sm:justify-start">
+            <span class="font-semibold text-slate-500"><i class="fa-solid fa-circle-info text-slate-400 mr-1"></i>操作:</span>
+            <span class="ml-1">マスをタップ：未着手 ⚪️ ➡️ 不正解 ❌ ➡️ 正解 🟢</span>
+          </div>
+        </div>
+
+        <!-- メインチェックシートエリア -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex-1 flex flex-col min-h-[380px]">
+          
+          <!-- コントロールヘッダー (フィルター & ページング) -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-100 pb-3 mb-3">
+            
+            <!-- ステータスフィルター -->
+            <div class="flex flex-wrap gap-1">
+              <button data-filter="all" class="filter-btn px-2.5 py-1 rounded-md text-[11px] font-bold bg-indigo-50 text-indigo-700 transition">
+                すべて
+              </button>
+              <button data-filter="incorrect" class="filter-btn px-2.5 py-1 rounded-md text-[11px] font-bold text-slate-500 hover:bg-slate-100 transition flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> 不正解 ❌のみ
+              </button>
+              <button data-filter="correct" class="filter-btn px-2.5 py-1 rounded-md text-[11px] font-bold text-slate-500 hover:bg-slate-100 transition flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> 正解 🟢のみ
+              </button>
+              <button data-filter="unattempted" class="filter-btn px-2.5 py-1 rounded-md text-[11px] font-bold text-slate-500 hover:bg-slate-100 transition flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span> 未着手のみ
+              </button>
+            </div>
+
+            <!-- 分割範囲セレクター -->
+            <div class="flex items-center gap-1.5 self-end sm:self-auto">
+              <span class="text-[11px] text-slate-500 font-medium">表示範囲:</span>
+              <select id="grid-range-selector" class="border border-slate-300 rounded-md py-1 px-1.5 text-[11px] focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white font-bold text-slate-700">
+                <!-- JSで動的に刻みを入れて追加 -->
+              </select>
+            </div>
+          </div>
+
+          <!-- チェックシートグリッド -->
+          <div class="flex-1 overflow-y-auto relative">
+            <div id="checksheet-grid" class="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-1.5 p-0.5">
+              <!-- JSで動的にセルを生成 -->
+            </div>
+            
+            <!-- フィルター結果が0件の場合のメッセージ -->
+            <div id="filter-empty-state" class="hidden text-center py-12 text-slate-400 absolute inset-0 flex flex-col items-center justify-center">
+              <i class="fa-regular fa-face-smile text-3xl mb-1.5 opacity-40"></i>
+              <p class="text-xs font-semibold">該当する項目はありません！</p>
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </main>
+  </div>
+
+  <!-- フルスクリーンローディングスピナー -->
+  <div id="app-spinner" class="fixed inset-0 bg-slate-50 z-50 flex flex-col items-center justify-center gap-4">
+    <div class="relative w-12 h-12">
+      <div class="absolute inset-0 border-4 border-indigo-100 rounded-full"></div>
+      <div class="absolute inset-0 border-4 border-t-indigo-600 rounded-full animate-spin"></div>
+    </div>
+    <div class="text-center">
+      <h2 class="font-bold text-base text-slate-800">StudyFlowを同期中...</h2>
+      <p class="text-xs text-slate-400">快適な勉強体験を準備しています</p>
+    </div>
+  </div>
+
+  <!-- 【参考書作成・編集モーダル】 -->
+  <div id="modal-folder" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in duration-150 flex flex-col">
+      <div class="p-4 border-b border-slate-100 flex items-center justify-between shrink-0">
+        <h3 id="modal-folder-title" class="font-bold text-base text-slate-900">参考書の登録</h3>
+        <button class="modal-folder-close text-slate-400 hover:text-slate-600 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <div class="p-4 space-y-4 overflow-y-auto flex-1">
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">参考書の名称 *</label>
+          <input id="folder-input-title" type="text" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="例: 青チャートI+A, ターゲット1900, 名門の風">
+        </div>
+        
+        <!-- カラーピッカー -->
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">テーマカラー *</label>
+          <div id="color-picker-grid" class="flex gap-2 flex-wrap">
+            <!-- JSで挿入 -->
+          </div>
+          <input type="hidden" id="folder-input-color" value="indigo">
+        </div>
+
+        <!-- アイコンピッカー -->
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">アイコンマーク *</label>
+          <div id="icon-picker-grid" class="grid grid-cols-4 sm:grid-cols-8 gap-2">
+            <!-- JSで挿入 -->
+          </div>
+          <input type="hidden" id="folder-input-icon" value="book">
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">参考書の説明・総合目標（任意）</label>
+          <textarea id="folder-input-desc" rows="2" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="例: 共通テストまでに極める。"></textarea>
+        </div>
+      </div>
+      <div class="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2 shrink-0">
+        <button class="modal-folder-close px-3.5 py-2 text-xs font-semibold text-slate-500 hover:text-slate-700 transition">キャンセル</button>
+        <button id="btn-save-folder" class="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition">保存する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 【進捗シート作成・編集モーダル】 -->
+  <div id="modal-sheet" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in duration-150 flex flex-col">
+      <div class="p-4 border-b border-slate-100 flex items-center justify-between shrink-0">
+        <h3 id="modal-sheet-title" class="font-bold text-base text-slate-900">進捗シートの作成</h3>
+        <button class="modal-sheet-close text-slate-400 hover:text-slate-600 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <div class="p-4 space-y-4 overflow-y-auto flex-1">
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">シート名・対象問題 *</label>
+          <input id="sheet-input-title" type="text" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="例: 基本問題, 1章, 単語編">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">総数（最大2000まで） *</label>
+            <input id="sheet-input-total" type="number" min="1" max="2000" value="100" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">進捗単位 *</label>
+            <select id="sheet-input-unit-type" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+              <option value="問">問 (問題)</option>
+              <option value="ページ">ページ</option>
+              <option value="セクション">セクション</option>
+              <option value="custom">カスタム単位</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- カスタム単位の入力欄 -->
+        <div id="sheet-custom-unit-container" class="hidden">
+          <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">カスタム単位名 *</label>
+          <input id="sheet-input-custom-unit" type="text" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="例: 語、章、カード">
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">目標・メモ（任意）</label>
+          <textarea id="sheet-input-desc" rows="2" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="例: 間違えた問題を徹底的に復習！"></textarea>
+        </div>
+      </div>
+      <div class="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2 shrink-0">
+        <button class="modal-sheet-close px-3.5 py-2 text-xs font-semibold text-slate-500 hover:text-slate-700 transition">キャンセル</button>
+        <button id="btn-save-sheet" class="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition">保存する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- メッセージ通知用カスタムポップアップ -->
+  <div id="toast-container" class="fixed bottom-4 right-4 z-50 space-y-2 pointer-events-none"></div>
+
+  <!-- ==================== Firebase Setup & Logic ==================== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { 
+      getAuth, 
+      signInWithCustomToken, 
+      signInAnonymously, 
+      GoogleAuthProvider, 
+      signInWithPopup, 
+      onAuthStateChanged, 
+      signOut 
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { 
+      getFirestore, 
+      doc, 
+      setDoc, 
+      getDoc, 
+      collection, 
+      onSnapshot, 
+      addDoc, 
+      updateDoc, 
+      deleteDoc,
+      query,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // Canvas Environment Variables
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'studyflow-preview-app';
+    const firebaseConfig = JSON.parse(__firebase_config);
+
+    // Firebase Init
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // Global State
+    let currentUser = null;
+    let folders = []; // フォルダ（参考書）
+    let sheets = [];  // 進捗シート
+    
+    let currentFolderId = null;
+    let currentSheetId = null;
+    
+    let editingFolderId = null;
+    let editingSheetId = null;
+
+    let currentView = 'home'; // home | folder | sheet
+    let currentFilter = 'all'; // all | incorrect | correct | unattempted
+    let currentGridStart = 1; 
+    const gridLimit = 200; 
+
+    // パレット
+    const COLOR_PALETTE = {
+      indigo: { bg: 'bg-indigo-50', text: 'text-indigo-600', fill: 'bg-indigo-600' },
+      blue: { bg: 'bg-blue-50', text: 'text-blue-600', fill: 'bg-blue-600' },
+      emerald: { bg: 'bg-emerald-50', text: 'text-emerald-600', fill: 'bg-emerald-600' },
+      amber: { bg: 'bg-amber-50', text: 'text-amber-600', fill: 'bg-amber-600' },
+      rose: { bg: 'bg-rose-50', text: 'text-rose-600', fill: 'bg-rose-600' },
+      violet: { bg: 'bg-violet-50', text: 'text-violet-600', fill: 'bg-violet-600' },
+      slate: { bg: 'bg-slate-100', text: 'text-slate-600', fill: 'bg-slate-700' }
+    };
+
+    const ICON_PALETTE = {
+      book: { icon: 'fa-solid fa-book', label: '本' },
+      dictionary: { icon: 'fa-solid fa-book-open', label: '単語帳' },
+      pen: { icon: 'fa-solid fa-pen-fancy', label: 'ペン' },
+      calculator: { icon: 'fa-solid fa-calculator', label: '理数' },
+      crown: { icon: 'fa-solid fa-crown', label: '王冠' },
+      brain: { icon: 'fa-solid fa-brain', label: '暗記' },
+      flask: { icon: 'fa-solid fa-flask', label: '実験' },
+      globe: { icon: 'fa-solid fa-globe', label: '社会/英語' }
+    };
+
+    // DOM Elements
+    const spinner = document.getElementById('app-spinner');
+    const appEl = document.getElementById('app');
+    const authTriggers = document.getElementById('auth-triggers');
+    const userInfo = document.getElementById('user-info');
+    const userAvatar = document.getElementById('user-avatar');
+    const userName = document.getElementById('user-name');
+    const authStatus = document.getElementById('auth-status');
+    const btnAddFolder = document.getElementById('btn-add-folder');
+    const btnLoginGoogle = document.getElementById('btn-login-google');
+    const btnLoginAnon = document.getElementById('btn-login-anon');
+    const btnLogout = document.getElementById('btn-logout');
+    const headerLogo = document.getElementById('header-logo');
+
+    const viewHome = document.getElementById('view-home');
+    const viewFolderDetail = document.getElementById('view-folder-detail');
+    const viewSheetDetail = document.getElementById('view-sheet-detail');
+    
+    const foldersGrid = document.getElementById('folders-grid');
+    const folderCountEl = document.getElementById('folder-count');
+
+    const btnFolderBackHome = document.getElementById('btn-folder-back-home');
+    const btnEditFolder = document.getElementById('btn-edit-folder');
+    const btnDeleteFolder = document.getElementById('btn-delete-folder');
+    const currentFolderTitle = document.getElementById('current-folder-title');
+    const currentFolderDesc = document.getElementById('current-folder-desc');
+    const folderDetailIconWrapper = document.getElementById('folder-detail-icon-wrapper');
+    const folderDetailIcon = document.getElementById('folder-detail-icon');
+    const btnAddSheet = document.getElementById('btn-add-sheet');
+    const sheetsList = document.getElementById('sheets-list');
+
+    const btnSheetBackFolder = document.getElementById('btn-sheet-back-folder');
+    const btnEditSheet = document.getElementById('btn-edit-sheet');
+    const btnDeleteSheet = document.getElementById('btn-delete-sheet');
+    const currentSheetBadge = document.getElementById('current-sheet-badge');
+    const currentSheetTitle = document.getElementById('current-sheet-title');
+    const currentSheetDesc = document.getElementById('current-sheet-desc');
+    const statTotal = document.getElementById('stat-total');
+    const statIncorrect = document.getElementById('stat-incorrect');
+    const statDone = document.getElementById('stat-done');
+    const statPercent = document.getElementById('stat-percent');
+    const barDone = document.getElementById('bar-done');
+    const barIncorrect = document.getElementById('bar-incorrect');
+
+    const bulkStart = document.getElementById('bulk-start');
+    const bulkEnd = document.getElementById('bulk-end');
+    const bulkAction = document.getElementById('bulk-action');
+    const btnApplyBulk = document.getElementById('btn-apply-bulk');
+    const rangeSelector = document.getElementById('grid-range-selector');
+    const checksheetGrid = document.getElementById('checksheet-grid');
+    const filterEmptyState = document.getElementById('filter-empty-state');
+
+    const modalFolder = document.getElementById('modal-folder');
+    const modalFolderTitle = document.getElementById('modal-folder-title');
+    const inputFolderTitle = document.getElementById('folder-input-title');
+    const inputFolderColor = document.getElementById('folder-input-color');
+    const inputFolderIcon = document.getElementById('folder-input-icon');
+    const inputFolderDesc = document.getElementById('folder-input-desc');
+    const btnSaveFolder = document.getElementById('btn-save-folder');
+    const colorPickerGrid = document.getElementById('color-picker-grid');
+    const iconPickerGrid = document.getElementById('icon-picker-grid');
+
+    const modalSheet = document.getElementById('modal-sheet');
+    const modalSheetTitle = document.getElementById('modal-sheet-title');
+    const inputSheetTitle = document.getElementById('sheet-input-title');
+    const inputSheetTotal = document.getElementById('sheet-input-total');
+    const inputSheetUnitType = document.getElementById('sheet-input-unit-type');
+    const customUnitContainer = document.getElementById('sheet-custom-unit-container');
+    const inputSheetCustomUnit = document.getElementById('sheet-input-custom-unit');
+    const inputSheetDesc = document.getElementById('sheet-input-desc');
+    const btnSaveSheet = document.getElementById('btn-save-sheet');
+
+    // ==================== HELPERS ====================
+    function escapeHTML(str) {
+      if (!str) return '';
+      return str.replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+      }[tag] || tag));
+    }
+
+    function getSheetUnit(sheet) {
+      if (sheet.unitType === 'custom') return sheet.customUnit || '問';
+      return sheet.unitType || '問';
+    }
+
+    function applyUnitsToUI(unit) {
+      document.querySelectorAll('.inline-unit').forEach(el => el.textContent = unit);
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `flex items-center gap-3 bg-white border-l-4 p-4 rounded-xl shadow-lg border-slate-200 transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto max-w-sm`;
+      
+      let icon = '<i class="fa-solid fa-circle-info text-blue-500"></i>';
+      if (type === 'success') {
+        toast.classList.add('border-emerald-500');
+        icon = '<i class="fa-solid fa-circle-check text-emerald-500"></i>';
+      } else if (type === 'error') {
+        toast.classList.add('border-rose-500');
+        icon = '<i class="fa-solid fa-circle-exclamation text-rose-500"></i>';
+      }
+
+      toast.innerHTML = `<span class="text-lg">${icon}</span><p class="text-xs font-semibold text-slate-700">${message}</p>`;
+      container.appendChild(toast);
+      
+      setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 50);
+      setTimeout(() => {
+        toast.classList.add('translate-y-2', 'opacity-0');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // ==================== PICKERS GENERATOR ====================
+    function buildPickers() {
+      colorPickerGrid.innerHTML = Object.keys(COLOR_PALETTE).map(key => {
+        const item = COLOR_PALETTE[key];
+        return `
+          <button type="button" data-color="${key}" class="color-select-btn w-7 h-7 rounded-full ${item.fill} border-2 border-transparent transition focus:outline-none flex items-center justify-center text-white text-xs hover:scale-110">
+            <i class="fa-solid fa-check opacity-0 check-mark"></i>
+          </button>
+        `;
+      }).join('');
+
+      document.querySelectorAll('.color-select-btn').forEach(btn => {
+        btn.addEventListener('click', () => selectColorInPicker(btn.getAttribute('data-color')));
+      });
+
+      iconPickerGrid.innerHTML = Object.keys(ICON_PALETTE).map(key => {
+        const item = ICON_PALETTE[key];
+        return `
+          <button type="button" data-icon="${key}" class="icon-select-btn border border-slate-200 p-2 rounded-xl hover:bg-slate-50 text-slate-500 transition focus:outline-none flex flex-col items-center justify-center gap-1">
+            <i class="${item.icon} text-lg"></i>
+            <span class="text-[9px] font-medium leading-none">${item.label}</span>
+          </button>
+        `;
+      }).join('');
+
+      document.querySelectorAll('.icon-select-btn').forEach(btn => {
+        btn.addEventListener('click', () => selectIconInPicker(btn.getAttribute('data-icon')));
+      });
+    }
+
+    function selectColorInPicker(colorKey) {
+      inputFolderColor.value = colorKey;
+      document.querySelectorAll('.color-select-btn').forEach(btn => {
+        if (btn.getAttribute('data-color') === colorKey) {
+          btn.classList.add('border-slate-800');
+          btn.querySelector('.check-mark').classList.remove('opacity-0');
+        } else {
+          btn.classList.remove('border-slate-800');
+          btn.querySelector('.check-mark').classList.add('opacity-0');
+        }
+      });
+    }
+
+    function selectIconInPicker(iconKey) {
+      inputFolderIcon.value = iconKey;
+      document.querySelectorAll('.icon-select-btn').forEach(btn => {
+        if (btn.getAttribute('data-icon') === iconKey) {
+          btn.className = "icon-select-btn border-2 border-indigo-500 bg-indigo-50 text-indigo-700 p-2 rounded-xl transition focus:outline-none flex flex-col items-center justify-center gap-1";
+        } else {
+          btn.className = "icon-select-btn border border-slate-200 p-2 rounded-xl hover:bg-slate-50 text-slate-500 transition focus:outline-none flex flex-col items-center justify-center gap-1";
+        }
+      });
+    }
+
+    // ==================== AUTHENTICATION (RULE 3) ====================
+    const initAuth = async () => {
+      buildPickers();
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        }
+      } catch (err) {
+        showToast("ログインの初期化に失敗しました。", "error");
+      } finally {
+        spinner.classList.add('hidden');
+        appEl.classList.remove('hidden');
+      }
+    };
+
+    onAuthStateChanged(auth, (user) => {
+      currentUser = user;
+      if (user) {
+        authTriggers.classList.add('hidden');
+        userInfo.classList.remove('hidden');
+        userAvatar.src = user.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.uid}`;
+        userName.textContent = user.displayName || "匿名ユーザー";
+        authStatus.textContent = user.isAnonymous ? "ゲスト接続" : "同期中";
+        subscribeData(user.uid);
+      } else {
+        authTriggers.classList.remove('hidden');
+        userInfo.classList.add('hidden');
+        foldersGrid.innerHTML = `
+          <div class="col-span-full text-center py-16 text-slate-400 bg-white rounded-2xl border border-slate-200">
+            <i class="fa-solid fa-lock text-4xl mb-3 opacity-30 block"></i>
+            <p class="text-sm font-semibold text-slate-600">データを保存するには、ログインまたはゲスト接続を開始してください。</p>
+          </div>
+        `;
+        folderCountEl.textContent = '0';
+        switchView('home');
+        folders = [];
+        sheets = [];
+        currentFolderId = null;
+        currentSheetId = null;
+      }
+    });
+
+    btnLoginGoogle.addEventListener('click', async () => {
+      try {
+        spinner.classList.remove('hidden');
+        await signInWithPopup(auth, new GoogleAuthProvider());
+        showToast("Googleでログインしました！", "success");
+      } catch (err) {
+        showToast("ログインが失敗しました。", "error");
+      } finally {
+        spinner.classList.add('hidden');
+      }
+    });
+
+    btnLoginAnon.addEventListener('click', async () => {
+      try {
+        spinner.classList.remove('hidden');
+        await signInAnonymously(auth);
+        showToast("一時アカウント（ゲスト）で開始しました。", "info");
+      } catch (err) {
+        showToast("ログインに失敗しました。", "error");
+      } finally {
+        spinner.classList.add('hidden');
+      }
+    });
+
+    btnLogout.addEventListener('click', async () => {
+      if (confirm("ログアウトしますか？")) {
+        try {
+          await signOut(auth);
+          showToast("ログアウトしました", "info");
+        } catch (err) {
+          showToast("エラーが発生しました", "error");
+        }
+      }
+    });
+
+    // ==================== FIRESTORE DATA SYNC ====================
+    let unsubscribeFoldersFn = null;
+    let unsubscribeSheetsFn = null;
+
+    function subscribeData(userId) {
+      if (unsubscribeFoldersFn) unsubscribeFoldersFn();
+      if (unsubscribeSheetsFn) unsubscribeSheetsFn();
+
+      const foldersCollection = collection(db, 'artifacts', appId, 'users', userId, 'folders');
+      const sheetsCollection = collection(db, 'artifacts', appId, 'users', userId, 'sheets');
+
+      unsubscribeFoldersFn = onSnapshot(foldersCollection, (snapshot) => {
+        folders = [];
+        snapshot.forEach(doc => folders.push({ id: doc.id, ...doc.data() }));
+        folders.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+        
+        renderFoldersHome();
+        if (currentFolderId) {
+          const folder = folders.find(f => f.id === currentFolderId);
+          if (folder) renderFolderDetail(folder);
+          else switchView('home');
+        }
+      }, (err) => console.error("Folders sync error:", err));
+
+      unsubscribeSheetsFn = onSnapshot(sheetsCollection, (snapshot) => {
+        sheets = [];
+        snapshot.forEach(doc => sheets.push({ id: doc.id, ...doc.data() }));
+        sheets.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+
+        if (currentFolderId) renderSheetsList();
+        if (currentSheetId) {
+          const sheet = sheets.find(s => s.id === currentSheetId);
+          if (sheet) renderSheetDetail(sheet);
+          else switchView('folder');
+        }
+      }, (err) => console.error("Sheets sync error:", err));
+    }
+
+    // ==================== VIEW MANAGEMENT (PAGE NAVIGATION) ====================
+    function switchView(viewName) {
+      currentView = viewName;
+      if (viewName === 'home') {
+        viewHome.classList.remove('hidden');
+        viewFolderDetail.classList.add('hidden');
+        viewSheetDetail.classList.add('hidden');
+        currentFolderId = null;
+        currentSheetId = null;
+      } else if (viewName === 'folder') {
+        viewHome.classList.add('hidden');
+        viewFolderDetail.classList.remove('hidden');
+        viewSheetDetail.classList.add('hidden');
+        currentSheetId = null;
+      } else if (viewName === 'sheet') {
+        viewHome.classList.add('hidden');
+        viewFolderDetail.classList.add('hidden');
+        viewSheetDetail.classList.remove('hidden');
+      }
+    }
+
+    btnFolderBackHome.addEventListener('click', () => switchView('home'));
+    headerLogo.addEventListener('click', () => switchView('home'));
+    btnSheetBackFolder.addEventListener('click', () => {
+      if (currentFolderId && folders.find(f => f.id === currentFolderId)) {
+        renderFolderDetail(folders.find(f => f.id === currentFolderId));
+        switchView('folder');
+      } else {
+        switchView('home');
+      }
+    });
+
+    // ==================== UI RENDERING: HOME VIEW (本棚) ====================
+    function renderFoldersHome() {
+      folderCountEl.textContent = folders.length;
+      if (folders.length === 0) {
+        foldersGrid.innerHTML = `
+          <div class="col-span-full text-center py-16 text-slate-400 bg-white rounded-2xl border border-slate-200 border-dashed">
+            <i class="fa-solid fa-book-open text-4xl mb-3 opacity-30 block"></i>
+            <p class="text-sm font-semibold text-slate-600 mb-1">本棚は空っぽです</p>
+            <p class="text-xs mb-4 text-slate-400">下のボタンから参考書を登録して、すぐに進捗記録を開始しましょう！</p>
+          </div>
+        `;
+        return;
+      }
+
+      foldersGrid.innerHTML = folders.map(folder => {
+        const colorSet = COLOR_PALETTE[folder.color || 'indigo'] || COLOR_PALETTE.indigo;
+        const iconSet = ICON_PALETTE[folder.icon || 'book'] || ICON_PALETTE.book;
+        const folderSheets = sheets.filter(s => s.folderId === folder.id);
+        
+        let totalStats = 0, doneStats = 0, incorrectStats = 0;
+        folderSheets.forEach(sheet => {
+          totalStats += sheet.totalCount || 0;
+          const prog = sheet.progress || {};
+          for (let key in prog) {
+            if (prog[key] === 2) doneStats++;
+            else if (prog[key] === 1) incorrectStats++;
+          }
+        });
+
+        const percent = totalStats > 0 ? Math.round((doneStats / totalStats) * 100) : 0;
+        const incorrectPercent = totalStats > 0 ? Math.round((incorrectStats / totalStats) * 100) : 0;
+
+        return `
+          <div data-id="${folder.id}" class="folder-card bg-white border border-slate-200 rounded-2xl p-5 cursor-pointer hover:border-indigo-400 hover:shadow-md hover:-translate-y-0.5 transition duration-200 flex flex-col justify-between h-52">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <div class="${colorSet.bg} ${colorSet.text} p-2 rounded-xl flex items-center justify-center w-8 h-8">
+                  <i class="${iconSet.icon} text-sm"></i>
+                </div>
+                <span class="bg-slate-50 border border-slate-100 text-slate-500 text-[10px] font-bold px-2 py-0.5 rounded-md">
+                  シート数: ${folderSheets.length}
+                </span>
+              </div>
+              <h3 class="font-bold text-slate-900 text-base line-clamp-1 leading-tight">${escapeHTML(folder.title)}</h3>
+              <p class="text-xs text-slate-400 mt-1 line-clamp-2">${escapeHTML(folder.desc || '総合的な目標メモなど')}</p>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-100">
+              <div class="flex justify-between text-[10px] font-bold text-slate-500 mb-1">
+                <span>正解: ${doneStats} / 不正解: ${incorrectStats}</span>
+                <span class="text-indigo-600 font-bold">${percent}%</span>
+              </div>
+              <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden flex">
+                <div class="bg-emerald-500 h-full" style="width: ${percent}%"></div>
+                <div class="bg-rose-500 h-full" style="width: ${incorrectPercent}%"></div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.querySelectorAll('.folder-card').forEach(card => {
+        card.addEventListener('click', () => openFolderDetail(card.getAttribute('data-id')));
+      });
+    }
+
+    // ==================== UI RENDERING: FOLDER VIEW (参考書の中身) ====================
+    function openFolderDetail(id) {
+      currentFolderId = id;
+      const folder = folders.find(f => f.id === id);
+      if (folder) {
+        renderFolderDetail(folder);
+        switchView('folder');
+      }
+    }
+
+    function renderFolderDetail(folder) {
+      currentFolderTitle.textContent = folder.title;
+      currentFolderDesc.textContent = folder.desc || "学習メモや総合目標はありません。";
+      const colorSet = COLOR_PALETTE[folder.color || 'indigo'] || COLOR_PALETTE.indigo;
+      const iconSet = ICON_PALETTE[folder.icon || 'book'] || ICON_PALETTE.book;
+      folderDetailIconWrapper.className = `${colorSet.bg} ${colorSet.text} p-2.5 rounded-xl mt-1`;
+      folderDetailIcon.className = `${iconSet.icon} text-xl`;
+      renderSheetsList();
+    }
+
+    function renderSheetsList() {
+      const folderSheets = sheets.filter(s => s.folderId === currentFolderId);
+      if (folderSheets.length === 0) {
+        sheetsList.innerHTML = `
+          <div class="col-span-full text-center py-12 text-slate-400 bg-white rounded-2xl border border-slate-200 border-dashed">
+            <i class="fa-solid fa-rectangle-list text-3xl mb-2 opacity-30 block"></i>
+            <p class="text-xs font-semibold mb-1">登録されている進捗シートがありません</p>
+            <p class="text-[10px]">右上の「進捗シートを追加」ボタンから追加してください。</p>
+          </div>
+        `;
+        return;
+      }
+
+      sheetsList.innerHTML = folderSheets.map(sheet => {
+        const total = sheet.totalCount || 0;
+        const progress = sheet.progress || {};
+        const unit = getSheetUnit(sheet);
+
+        let doneCount = 0, incorrectCount = 0;
+        for (let key in progress) {
+          if (progress[key] === 2) doneCount++;
+          else if (progress[key] === 1) incorrectCount++;
+        }
+
+        const percent = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+        const incorrectPercent = total > 0 ? Math.round((incorrectCount / total) * 100) : 0;
+
+        return `
+          <div data-sheet-id="${sheet.id}" class="sheet-card bg-white border border-slate-200 hover:border-indigo-400 rounded-xl p-4 cursor-pointer hover:shadow-sm transition flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-800 leading-tight">${escapeHTML(sheet.title)}</span>
+                <span class="bg-indigo-50 text-indigo-700 text-[9px] font-bold px-1.5 py-0.5 rounded-md">
+                  ${total}${unit}
+                </span>
+              </div>
+              <p class="text-[10px] text-slate-400 line-clamp-1">${escapeHTML(sheet.desc || '個別の進捗計画・メモ')}</p>
+            </div>
+            <div class="mt-3 pt-2.5 border-t border-slate-100">
+              <div class="flex justify-between text-[9px] text-slate-500 font-semibold mb-1">
+                <span>正解: ${doneCount} / 不正解: ${incorrectCount}</span>
+                <span class="text-indigo-600 font-bold">${percent}%</span>
+              </div>
+              <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden flex">
+                <div class="bg-emerald-500 h-full" style="width: ${percent}%"></div>
+                <div class="bg-rose-500 h-full" style="width: ${incorrectPercent}%"></div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.querySelectorAll('.sheet-card').forEach(card => {
+        card.addEventListener('click', () => openSheetDetail(card.getAttribute('data-sheet-id')));
+      });
+    }
+
+    // ==================== UI RENDERING: SHEET VIEW (個別進捗グリッド) ====================
+    function openSheetDetail(sheetId) {
+      currentSheetId = sheetId;
+      currentFilter = 'all';
+      currentGridStart = 1;
+      updateFilterButtons();
+      const sheet = sheets.find(s => s.id === sheetId);
+      if (sheet) {
+        renderSheetDetail(sheet);
+        switchView('sheet');
+      }
+    }
+
+    function renderSheetDetail(sheet) {
+      currentSheetTitle.textContent = sheet.title;
+      currentSheetDesc.textContent = sheet.desc || "学習計画やメモは設定されていません。";
+      const total = parseInt(sheet.totalCount) || 100;
+      const progress = sheet.progress || {};
+      const unit = getSheetUnit(sheet);
+
+      currentSheetBadge.textContent = `${total}${unit}シート`;
+      applyUnitsToUI(unit);
+
+      let doneCount = 0, incorrectCount = 0;
+      for (let i = 1; i <= total; i++) {
+        const val = progress[i.toString()] || 0;
+        if (val === 2) doneCount++;
+        else if (val === 1) incorrectCount++;
+      }
+
+      const percent = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+      const incorrectPercent = total > 0 ? Math.round((incorrectCount / total) * 100) : 0;
+
+      statTotal.textContent = total;
+      statIncorrect.textContent = incorrectCount;
+      statDone.textContent = doneCount;
+      statPercent.textContent = `${percent}%`;
+      barDone.style.width = `${percent}%`;
+      barIncorrect.style.width = `${incorrectPercent}%`;
+
+      updateRangeSelector(total, unit);
+      renderGrid(sheet, total, unit);
+    }
+
+    function updateRangeSelector(total, unit) {
+      rangeSelector.innerHTML = '';
+      if (total <= gridLimit) {
+        const option = document.createElement('option');
+        option.value = "1";
+        option.textContent = `全1-${total}${unit}`;
+        rangeSelector.appendChild(option);
+        rangeSelector.disabled = true;
+        currentGridStart = 1;
+        return;
+      }
+      rangeSelector.disabled = false;
+      let optionsHtml = '';
+      for (let start = 1; start <= total; start += gridLimit) {
+        const end = Math.min(start + gridLimit - 1, total);
+        const selected = (currentGridStart >= start && currentGridStart <= end) ? 'selected' : '';
+        optionsHtml += `<option value="${start}" ${selected}>${start} 〜 ${end}${unit}</option>`;
+      }
+      rangeSelector.innerHTML = optionsHtml;
+    }
+
+    rangeSelector.addEventListener('change', (e) => {
+      currentGridStart = parseInt(e.target.value);
+      const sheet = sheets.find(s => s.id === currentSheetId);
+      if (sheet) renderGrid(sheet, sheet.totalCount, getSheetUnit(sheet));
+    });
+
+    function updateFilterButtons() {
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        const filter = btn.getAttribute('data-filter');
+        if (filter === currentFilter) {
+          if (filter === 'all') btn.className = "filter-btn px-2.5 py-1 rounded-md text-[11px] font-bold bg-indigo-50 text-indigo-700 transition";
+          else if (filter === 'incorrect') btn.className = "filter-btn px-2.5 py-1 rounded-md text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-100 transition flex items-center gap-1";
+          else if (filter === 'correct') btn.className = "filter-btn px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 transition flex items-center gap-1";
+          else if (filter === 'unattempted') btn.className = "filter-btn px-2.5 py-1 rounded-md text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200 transition flex items-center gap-1";
+        } else {
+          btn.className = "filter-btn px-2.5 py-1 rounded-md text-[11px] font-bold text-slate-500 hover:bg-slate-100 transition flex items-center gap-1";
+        }
+      });
+    }
+
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentFilter = btn.getAttribute('data-filter');
+        updateFilterButtons();
+        const sheet = sheets.find(s => s.id === currentSheetId);
+        if (sheet) renderGrid(sheet, sheet.totalCount, getSheetUnit(sheet));
+      });
+    });
+
+    // チェックシートグリッドの描画
+    function renderGrid(sheet, total, unit) {
+      checksheetGrid.innerHTML = '';
+      const progress = sheet.progress || {};
+      const end = Math.min(currentGridStart + gridLimit - 1, total);
+      let renderedCount = 0;
+
+      for (let i = currentGridStart; i <= end; i++) {
+        const status = progress[i.toString()] || 0; 
+
+        if (currentFilter === 'incorrect' && status !== 1) continue;
+        if (currentFilter === 'correct' && status !== 2) continue;
+        if (currentFilter === 'unattempted' && status !== 0) continue;
+
+        renderedCount++;
+        const cell = document.createElement('button');
+        
+        let bgClass = "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200";
+        let iconHtml = '';
+        if (status === 1) {
+          bgClass = "bg-rose-50 text-rose-700 border-rose-200 font-bold hover:bg-rose-100 shadow-sm shadow-rose-100/50 animate-in zoom-in duration-100";
+          iconHtml = '<span class="text-[8px] text-rose-500 block font-bold leading-none mt-1">❌ 不正解</span>';
+        } else if (status === 2) {
+          bgClass = "bg-emerald-500 text-white border-emerald-600 font-bold hover:bg-emerald-600 shadow-md shadow-emerald-100 animate-in zoom-in duration-100";
+          iconHtml = '<span class="text-[8px] text-emerald-100 block font-bold leading-none mt-1">🟢 正解</span>';
+        }
+
+        cell.className = `flex flex-col items-center justify-center p-1 rounded-xl border text-[11px] font-semibold h-12 transition duration-200 active:scale-95 ${bgClass}`;
+        cell.innerHTML = `<span class="leading-none">${i}</span>${iconHtml}`;
+
+        cell.addEventListener('click', async () => {
+          let nextStatus = (status + 1) % 3;
+          await updateQuestionStatus(sheet.id, i, nextStatus);
+        });
+
+        checksheetGrid.appendChild(cell);
+      }
+
+      if (renderedCount === 0) {
+        filterEmptyState.classList.remove('hidden');
+        checksheetGrid.classList.add('hidden');
+      } else {
+        filterEmptyState.classList.add('hidden');
+        checksheetGrid.classList.remove('hidden');
+      }
+    }
+
+    // ★重要バグ修正: トランザクション的確実アップデート (単体) ★
+    async function updateQuestionStatus(sheetId, qNum, newStatus) {
+      if (!currentUser) return;
+      const sheetRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'sheets', sheetId);
+      
+      try {
+        const docSnap = await getDoc(sheetRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          const newProgress = data.progress ? { ...data.progress } : {};
+          const key = qNum.toString();
+          
+          if (newStatus === 0) {
+            delete newProgress[key];
+          } else {
+            newProgress[key] = newStatus;
+          }
+          await updateDoc(sheetRef, { progress: newProgress });
+        }
+      } catch (err) {
+        console.error("Single update error:", err);
+        showToast("更新に失敗しました", "error");
+      }
+    }
+
+    // ==================== WORKFLOW: CRUD FOLDER ====================
+    btnAddFolder.addEventListener('click', () => {
+      editingFolderId = null;
+      modalFolderTitle.textContent = "参考書の追加";
+      inputFolderTitle.value = "";
+      inputFolderDesc.value = "";
+      selectColorInPicker('indigo');
+      selectIconInPicker('book');
+      modalFolder.classList.remove('hidden');
+    });
+
+    btnEditFolder.addEventListener('click', () => {
+      const folder = folders.find(f => f.id === currentFolderId);
+      if (!folder) return;
+
+      editingFolderId = folder.id;
+      modalFolderTitle.textContent = "参考書の編集";
+      inputFolderTitle.value = folder.title;
+      inputFolderDesc.value = folder.desc || "";
+      selectColorInPicker(folder.color || 'indigo');
+      selectIconInPicker(folder.icon || 'book');
+      modalFolder.classList.remove('hidden');
+    });
+
+    btnDeleteFolder.addEventListener('click', async () => {
+      if (!currentUser || !currentFolderId) return;
+      const folder = folders.find(f => f.id === currentFolderId);
+      if (!folder) return;
+
+      if (confirm(`本当に「${folder.title}」を削除しますか？\n中に入っているすべての進捗シートとチェックデータも完全に削除されます。`)) {
+        try {
+          const folderSheets = sheets.filter(s => s.folderId === currentFolderId);
+          for (const s of folderSheets) {
+            await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'sheets', s.id));
+          }
+          await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'folders', currentFolderId));
+          showToast("参考書を削除しました", "info");
+          switchView('home');
+        } catch (err) {
+          showToast("削除中にエラーが発生しました", "error");
+        }
+      }
+    });
+
+    document.querySelectorAll('.modal-folder-close').forEach(el => {
+      el.addEventListener('click', () => modalFolder.classList.add('hidden'));
+    });
+
+    btnSaveFolder.addEventListener('click', async () => {
+      const title = inputFolderTitle.value.trim();
+      const desc = inputFolderDesc.value.trim();
+      const color = inputFolderColor.value;
+      const icon = inputFolderIcon.value;
+
+      if (!title) {
+        showToast("参考書の名称を入力してください", "error");
+        return;
+      }
+      if (!currentUser) return;
+
+      btnSaveFolder.disabled = true;
+      try {
+        if (editingFolderId) {
+          await updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'folders', editingFolderId), {
+            title, desc, color, icon
+          });
+          showToast("参考書を更新しました", "success");
+        } else {
+          const docRef = await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'folders'), {
+            title, desc, color, icon, createdAt: serverTimestamp()
+          });
+          currentFolderId = docRef.id;
+          showToast("本棚に参考書を追加しました！", "success");
+        }
+        modalFolder.classList.add('hidden');
+      } catch (err) {
+        showToast("保存に失敗しました", "error");
+      } finally {
+        btnSaveFolder.disabled = false;
+      }
+    });
+
+    // ==================== WORKFLOW: CRUD SHEET ====================
+    inputSheetUnitType.addEventListener('change', (e) => {
+      if (e.target.value === 'custom') customUnitContainer.classList.remove('hidden');
+      else customUnitContainer.classList.add('hidden');
+    });
+
+    btnAddSheet.addEventListener('click', () => {
+      editingSheetId = null;
+      modalSheetTitle.textContent = "進捗シートの作成";
+      inputSheetTitle.value = "";
+      inputSheetTotal.value = "100";
+      inputSheetUnitType.value = "問";
+      customUnitContainer.classList.add('hidden');
+      inputSheetCustomUnit.value = "";
+      inputSheetDesc.value = "";
+      modalSheet.classList.remove('hidden');
+    });
+
+    btnEditSheet.addEventListener('click', () => {
+      const sheet = sheets.find(s => s.id === currentSheetId);
+      if (!sheet) return;
+
+      editingSheetId = sheet.id;
+      modalSheetTitle.textContent = "進捗シートの編集";
+      inputSheetTitle.value = sheet.title;
+      inputSheetTotal.value = sheet.totalCount;
+      
+      const savedUnit = sheet.unitType || '問';
+      if (['問', 'ページ', 'セクション'].includes(savedUnit)) {
+        inputSheetUnitType.value = savedUnit;
+        customUnitContainer.classList.add('hidden');
+        inputSheetCustomUnit.value = "";
+      } else {
+        inputSheetUnitType.value = 'custom';
+        customUnitContainer.classList.remove('hidden');
+        inputSheetCustomUnit.value = savedUnit;
+      }
+      
+      inputSheetDesc.value = sheet.desc || "";
+      modalSheet.classList.remove('hidden');
+    });
+
+    btnDeleteSheet.addEventListener('click', async () => {
+      if (!currentUser || !currentSheetId) return;
+      const sheet = sheets.find(s => s.id === currentSheetId);
+      if (!sheet) return;
+
+      if (confirm(`進捗シート「${sheet.title}」を削除してよろしいですか？記録データも消失します。`)) {
+        try {
+          await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'sheets', currentSheetId));
+          showToast("シートを削除しました", "info");
+          
+          if (currentFolderId && folders.find(f => f.id === currentFolderId)) {
+            renderFolderDetail(folders.find(f => f.id === currentFolderId));
+            switchView('folder');
+          } else {
+            switchView('home');
+          }
+        } catch (err) {
+          showToast("削除に失敗しました", "error");
+        }
+      }
+    });
+
+    document.querySelectorAll('.modal-sheet-close').forEach(el => {
+      el.addEventListener('click', () => modalSheet.classList.add('hidden'));
+    });
+
+    btnSaveSheet.addEventListener('click', async () => {
+      const title = inputSheetTitle.value.trim();
+      const total = parseInt(inputSheetTotal.value);
+      const desc = inputSheetDesc.value.trim();
+      let unitValue = inputSheetUnitType.value;
+
+      if (unitValue === 'custom') {
+        unitValue = inputSheetCustomUnit.value.trim();
+        if (!unitValue) {
+          showToast("カスタム単位を入力してください", "error");
+          return;
+        }
+      }
+
+      if (!title) {
+        showToast("シート名を入力してください", "error");
+        return;
+      }
+      if (isNaN(total) || total < 1 || total > 2000) {
+        showToast("総数は1〜2000の範囲で指定してください", "error");
+        return;
+      }
+      if (!currentUser || !currentFolderId) return;
+
+      btnSaveSheet.disabled = true;
+      try {
+        if (editingSheetId) {
+          // 最新の進捗データを取得しつつ整合性をとる
+          const sheetRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'sheets', editingSheetId);
+          const docSnap = await getDoc(sheetRef);
+          let newProgress = {};
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            const prog = data.progress || {};
+            // 総数を超えた古いマークデータを整理
+            for (let key in prog) {
+              if (parseInt(key) <= total) newProgress[key] = prog[key];
+            }
+          }
+
+          await updateDoc(sheetRef, {
+            title, totalCount: total, unitType: unitValue, desc, progress: newProgress
+          });
+          showToast("シートを更新しました", "success");
+        } else {
+          const docRef = await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'sheets'), {
+            folderId: currentFolderId,
+            title,
+            totalCount: total,
+            unitType: unitValue,
+            desc,
+            progress: {},
+            createdAt: serverTimestamp()
+          });
+          currentSheetId = docRef.id;
+        }
+        modalSheet.classList.add('hidden');
+      } catch (err) {
+        showToast("シートの保存に失敗しました", "error");
+      } finally {
+        btnSaveSheet.disabled = false;
+      }
+    });
+
+    // ==================== ★重要バグ修正: トランザクション的一括アップデート ★ ====================
+    btnApplyBulk.addEventListener('click', async () => {
+      if (!currentUser || !currentSheetId) return;
+
+      const sheet = sheets.find(s => s.id === currentSheetId);
+      if (!sheet) return;
+
+      const start = parseInt(bulkStart.value);
+      const end = parseInt(bulkEnd.value);
+      const action = parseInt(bulkAction.value); // 0:未着手, 1:不正解, 2:正解
+      const total = sheet.totalCount;
+      const unit = getSheetUnit(sheet);
+
+      if (isNaN(start) || isNaN(end) || start < 1 || end > total || start > end) {
+        showToast(`正しい範囲を入力してください（1〜${total}${unit}）`, "error");
+        return;
+      }
+
+      if (confirm(`${start}〜${end}${unit}を一括変更してよろしいですか？`)) {
+        
+        // UX強化：ボタンをスピナーにして連打防止
+        btnApplyBulk.disabled = true;
+        btnApplyBulk.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+        const sheetRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'sheets', currentSheetId);
+        
+        try {
+          // 最も安全な方法：データベースから最新状態を取得して一括書き換え
+          const docSnap = await getDoc(sheetRef);
+          if (!docSnap.exists()) throw new Error("シートが見つかりません");
+          
+          const currentData = docSnap.data();
+          const newProgress = currentData.progress ? { ...currentData.progress } : {};
+          
+          for (let i = start; i <= end; i++) {
+            const key = i.toString(); // 確実に文字列キーで管理する
+            if (action === 0) {
+              delete newProgress[key];
+            } else {
+              newProgress[key] = action;
+            }
+          }
+
+          await updateDoc(sheetRef, { progress: newProgress });
+          showToast(`${start}〜${end}${unit}を一括アップデートしました！`, "success");
+          
+          bulkStart.value = '';
+          bulkEnd.value = '';
+        } catch (err) {
+          console.error("Bulk update error:", err);
+          showToast("一括更新に失敗しました。もう一度お試しください。", "error");
+        } finally {
+          // ボタンの状態を元に戻す
+          btnApplyBulk.disabled = false;
+          btnApplyBulk.textContent = '適用';
+        }
+      }
+    });
+
+    // アプリ初期化
+    window.onload = () => {
+      initAuth();
+    };
+
+  </script>
+</body>
+</html>
