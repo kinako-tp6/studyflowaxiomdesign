@@ -55,10 +55,12 @@
         <!-- ユーザー認証・接続ステータスセクション -->
         <div class="flex items-center gap-2">
           <!-- モード表示バッジ -->
-          <span id="storage-mode-badge" class="text-[9px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-500">
-            ローカル保存モード
-          </span>
+          <button id="btn-cloud-status" class="text-[9px] font-bold px-2 py-0.5 rounded-md transition flex items-center gap-1 hover:scale-105 active:scale-95">
+            <span id="storage-mode-dot" class="w-1.5 h-1.5 rounded-full bg-slate-400 inline-block animate-pulse"></span>
+            <span id="storage-mode-text">ローカル保存中</span>
+          </button>
 
+          <!-- ユーザー情報（クラウド同期時のみ） -->
           <div id="user-info" class="hidden flex items-center gap-2">
             <img id="user-avatar" class="w-6 h-6 rounded-full border border-slate-200" src="" alt="avatar" onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=user'">
             <div class="text-right hidden sm:block">
@@ -70,22 +72,30 @@
             </button>
           </div>
           
+          <!-- クラウド認証トリガー -->
           <div id="auth-triggers" class="flex gap-1.5 hidden">
             <button id="btn-login-google" class="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-[10px] font-bold py-1 px-2.5 rounded-md shadow-sm transition">
-              <i class="fa-brands fa-google text-red-500"></i> 同期
+              <i class="fa-brands fa-google text-red-500"></i> 同期ログイン
             </button>
             <button id="btn-login-anon" class="bg-slate-100 text-slate-600 hover:bg-slate-200 text-[10px] font-bold py-1 px-2 rounded-md transition">
               ゲスト
             </button>
           </div>
 
-          <!-- Firebase接続設定を開くアドバンスドボタン -->
-          <button id="btn-open-db-settings" class="text-slate-400 hover:text-indigo-600 p-1 rounded-md text-xs transition" title="Firebase接続設定">
+          <!-- 設定ギアボタン -->
+          <button id="btn-open-db-settings" class="text-slate-400 hover:text-indigo-600 p-1.5 rounded-md text-xs transition" title="クラウド同期設定">
             <i class="fa-solid fa-gear"></i>
           </button>
         </div>
       </div>
     </header>
+
+    <!-- モード切り替え促進ミニバナー（ローカル保存モード時のみ表示） -->
+    <div id="local-mode-banner" class="bg-indigo-50 border-b border-indigo-100 px-4 py-1 text-center shrink-0 hidden">
+      <button id="btn-banner-setup" class="text-[10px] font-bold text-indigo-700 hover:text-indigo-800 transition flex items-center justify-center gap-1.5 mx-auto">
+        <i class="fa-solid fa-cloud animate-bounce"></i> スマホや他端末と進捗を同期させたい場合は、ここを押して「クラウド同期（無料）」を設定しましょう！
+      </button>
+    </div>
 
     <!-- メインコンテンツ領域 -->
     <main class="flex-1 overflow-hidden relative max-w-5xl w-full mx-auto">
@@ -321,7 +331,7 @@
       <div class="p-4 space-y-4 overflow-y-auto flex-1">
         <div>
           <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">参考書の名称 *</label>
-          <input id="folder-input-title" type="text" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="例: 青チャートI+A, ターゲット1900, 名問の風">
+          <input id="folder-input-title" type="text" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="例: 青チャートI+A, ターゲット1900, 名門の風">
         </div>
         
         <!-- カラーピッカー -->
@@ -401,23 +411,49 @@
     </div>
   </div>
 
-  <!-- 【アドバンスド：Firebase独自設定モーダル】 -->
-  <div id="modal-db-settings" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 animate-in fade-in duration-100">
-    <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden flex flex-col">
-      <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+  <!-- 【アドバンスド：Firebase独自設定＆ガイド付きモーダル】 -->
+  <div id="modal-db-settings" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 animate-in fade-in duration-100 overflow-y-auto">
+    <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden flex flex-col my-8">
+      <div class="p-4 border-b border-slate-100 flex items-center justify-between shrink-0">
         <h3 class="font-bold text-base text-slate-900 flex items-center gap-1.5">
-          <i class="fa-solid fa-cloud-arrow-up text-indigo-500"></i> Firebase接続設定
+          <i class="fa-solid fa-cloud-arrow-up text-indigo-500 animate-pulse"></i> ☁️ クラウド同期の有効化ガイド
         </h3>
         <button id="btn-close-db-settings" class="text-slate-400 hover:text-slate-600 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
-      <div class="p-5 space-y-4 text-xs overflow-y-auto max-h-[70vh]">
-        <p class="text-slate-500 leading-relaxed">
-          通常、GitHub Pagesなどの環境では<strong>「ローカル保存モード」</strong>で安全・高速に動作します。
-          スマホとPCなど、複数デバイスで進捗を完全同期したい場合のみ、ご自身のFirebase Webアプリ構成（JSON形式）をペーストしてクラウド保存に切り替えてください。
-        </p>
-        <div>
-          <label class="block font-bold text-slate-500 mb-1">Firebase Configuration (JSONオブジェクト)</label>
-          <textarea id="db-settings-config-input" rows="8" class="w-full font-mono border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-slate-900 text-slate-100" placeholder='{
+      <div class="p-5 space-y-4 text-xs overflow-y-auto max-h-[65vh]">
+        <div class="p-3 bg-indigo-50 text-indigo-800 rounded-xl space-y-1">
+          <p class="font-bold">💡 なぜ設定が必要？</p>
+          <p class="leading-relaxed">GitHub Pages上では他人にデータを書き換えられないよう、<strong>あなた専用の無料データベース（Firebase）</strong>を使用する必要があります。完全無料で3分で接続できます！</p>
+        </div>
+
+        <div class="space-y-3">
+          <h4 class="font-bold text-slate-700 border-b border-slate-200 pb-1 flex items-center gap-1.5">
+            <span class="bg-indigo-600 text-white w-4 h-4 rounded-full flex items-center justify-center text-[9px]">1</span> データベースを作る（完全無料）
+          </h4>
+          <ol class="list-decimal pl-4 space-y-1.5 text-slate-600 leading-relaxed">
+            <li><a href="https://console.firebase.google.com/" target="_blank" class="text-indigo-600 hover:underline font-bold">Firebase Console</a> にアクセスし、Googleアカウントでログイン。</li>
+            <li>「プロジェクトを追加」をクリックして任意のプロジェクト名（例: <code class="bg-slate-100 px-1 py-0.5 rounded">my-studyflow</code>）を入力し進みます（Googleアナリティクスは無効でOK）。</li>
+            <li>ダッシュボード内の「Webアプリアイコン（<code class="bg-slate-100 px-1 font-mono rounded">&lt;/&gt;</code>）」を選択。</li>
+            <li>アプリのニックネームを入れて登録すると、画面に <code class="bg-slate-100 px-1 font-mono rounded">const firebaseConfig = { ... };</code> というコードが表示されるので、<strong><code class="bg-slate-100 px-1 font-mono rounded">{ ... }</code> の中身（波括弧を含むオブジェクト全体）を丸ごとコピー</strong>します。</li>
+          </ol>
+        </div>
+
+        <div class="space-y-3">
+          <h4 class="font-bold text-slate-700 border-b border-slate-200 pb-1 flex items-center gap-1.5">
+            <span class="bg-indigo-600 text-white w-4 h-4 rounded-full flex items-center justify-center text-[9px]">2</span> 認証とFirestoreを設定
+          </h4>
+          <ul class="list-disc pl-4 space-y-1.5 text-slate-600 leading-relaxed">
+            <li><strong>ログイン機能の有効化：</strong>左メニューの「Build」➡️「Authentication」に入り、「始める」をクリック。ログインプロバイダで<strong>「Google」</strong>と<strong>「匿名ログイン」</strong>を有効にします。</li>
+            <li><strong>データベースの有効化：</strong>左メニュー「Build」➡️「Firestore Database」に入り、「データベースの作成」をクリック。「テストモードで開始」または「本番モード」で東京リージョン（asia-northeast1）を選択し作成します。</li>
+          </ul>
+        </div>
+
+        <div class="space-y-2">
+          <h4 class="font-bold text-slate-700 border-b border-slate-200 pb-1 flex items-center gap-1.5">
+            <span class="bg-indigo-600 text-white w-4 h-4 rounded-full flex items-center justify-center text-[9px]">3</span> コピーした設定の貼り付け
+          </h4>
+          <p class="text-slate-500">ステップ1でコピーしたご自身のFirebase設定コード（<code class="bg-slate-100 px-1 font-mono rounded">{ ... }</code> の部分）を下に貼り付けてください：</p>
+          <textarea id="db-settings-config-input" rows="7" class="w-full font-mono border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-slate-900 text-slate-100 text-[11px]" placeholder='{
   "apiKey": "AIzaSy...",
   "authDomain": "your-app.firebaseapp.com",
   "projectId": "your-app",
@@ -427,13 +463,13 @@
 }'></textarea>
         </div>
       </div>
-      <div class="p-4 bg-slate-50 border-t border-slate-100 flex justify-between gap-2 items-center">
+      <div class="p-4 bg-slate-50 border-t border-slate-100 flex justify-between gap-2 items-center shrink-0">
         <button id="btn-reset-db-settings" class="text-rose-600 hover:text-rose-700 font-bold text-xs px-3 py-2 hover:bg-rose-50 rounded-lg transition">
           ローカル保存に戻す
         </button>
         <div class="flex gap-2">
           <button id="btn-cancel-db-settings" class="px-4 py-2 text-xs font-semibold text-slate-500 hover:text-slate-700 transition">キャンセル</button>
-          <button id="btn-save-db-settings" class="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition">保存して再起動</button>
+          <button id="btn-save-db-settings" class="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition">保存して接続</button>
         </div>
       </div>
     </div>
@@ -468,33 +504,33 @@
       serverTimestamp
     } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // 1. 保存モード（クラウドかローカルか）の判定とFirebase接続キーの取得
+    // 1. 保存モード（クラウドかローカルか）の初期自動判定
     let storageMode = 'local'; // 'local' | 'cloud'
     let appId = 'studyflow-local-app';
     let firebaseConfig = null;
     let db = null;
     let auth = null;
 
-    // プレビュー環境の自動Configまたはユーザーによる設定Configがあるか確認
     try {
+      // ユーザー設定のカスタム設定が最優先
       const savedConfig = localStorage.getItem('studyflow_custom_firebase_config');
       if (savedConfig) {
         firebaseConfig = JSON.parse(savedConfig);
         storageMode = 'cloud';
         appId = 'studyflow-custom-app';
       } else if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+        // キャンバスプレビュー環境時のキーを検知
         firebaseConfig = JSON.parse(__firebase_config);
         storageMode = 'cloud';
         appId = typeof __app_id !== 'undefined' ? __app_id : 'studyflow-preview-app';
       }
     } catch (e) {
-      console.warn("Failed to parse Firebase configuration, falling back to LocalStorage.");
+      console.warn("Firebase configuration parse error, fallback to LocalStorage mode.", e);
     }
 
-    // 2. グローバルアプリケーション状態
-    let currentUser = null;
-    let folders = []; // フォルダ（参考書）
-    let sheets = [];  // 進捗シート
+    // 2. グローバル状態管理
+    let folders = []; // 親フォルダ（参考書）
+    let sheets = [];  // 子シート
     
     let currentFolderId = null;
     let currentSheetId = null;
@@ -507,7 +543,7 @@
     let currentGridStart = 1; 
     const gridLimit = 200; 
 
-    // パレット
+    // カラーパレット定義
     const COLOR_PALETTE = {
       indigo: { bg: 'bg-indigo-50', text: 'text-indigo-600', fill: 'bg-indigo-600' },
       blue: { bg: 'bg-blue-50', text: 'text-blue-600', fill: 'bg-blue-600' },
@@ -529,7 +565,7 @@
       globe: { icon: 'fa-solid fa-globe', label: '社会/英語' }
     };
 
-    // DOM Elements
+    // DOM要素の取得
     const spinner = document.getElementById('app-spinner');
     const appEl = document.getElementById('app');
     const authTriggers = document.getElementById('auth-triggers');
@@ -537,7 +573,11 @@
     const userAvatar = document.getElementById('user-avatar');
     const userName = document.getElementById('user-name');
     const authStatus = document.getElementById('auth-status');
-    const storageModeBadge = document.getElementById('storage-mode-badge');
+    const storageModeDot = document.getElementById('storage-mode-dot');
+    const storageModeText = document.getElementById('storage-mode-text');
+    const localModeBanner = document.getElementById('local-mode-banner');
+    const btnBannerSetup = document.getElementById('btn-banner-setup');
+    const btnCloudStatus = document.getElementById('btn-cloud-status');
     
     const btnAddFolder = document.getElementById('btn-add-folder');
     const btnLoginGoogle = document.getElementById('btn-login-google');
@@ -603,7 +643,7 @@
     const inputSheetDesc = document.getElementById('sheet-input-desc');
     const btnSaveSheet = document.getElementById('btn-save-sheet');
 
-    // Advanced: Firebase Settings Modal Elements
+    // Advanced setting modal elements
     const btnOpenDbSettings = document.getElementById('btn-open-db-settings');
     const modalDbSettings = document.getElementById('modal-db-settings');
     const btnCloseDbSettings = document.getElementById('btn-close-db-settings');
@@ -629,32 +669,9 @@
       document.querySelectorAll('.inline-unit').forEach(el => el.textContent = unit);
     }
 
-    function showToast(message, type = 'info') {
-      const container = document.getElementById('toast-container');
-      const toast = document.createElement('div');
-      toast.className = `flex items-center gap-3 bg-white border-l-4 p-4 rounded-xl shadow-lg border-slate-200 transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto max-w-sm`;
-      
-      let icon = '<i class="fa-solid fa-circle-info text-blue-500"></i>';
-      if (type === 'success') {
-        toast.classList.add('border-emerald-500');
-        icon = '<i class="fa-solid fa-circle-check text-emerald-500"></i>';
-      } else if (type === 'error') {
-        toast.classList.add('border-rose-500');
-        icon = '<i class="fa-solid fa-circle-exclamation text-rose-500"></i>';
-      }
-
-      toast.innerHTML = `<span class="text-lg">${icon}</span><p class="text-xs font-semibold text-slate-700">${message}</p>`;
-      container.appendChild(toast);
-      
-      setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 50);
-      setTimeout(() => {
-        toast.classList.add('translate-y-2', 'opacity-0');
-        setTimeout(() => toast.remove(), 300);
-      }, 3000);
-    }
-
     // ==================== PICKERS GENERATOR ====================
     function buildPickers() {
+      // カラー
       colorPickerGrid.innerHTML = Object.keys(COLOR_PALETTE).map(key => {
         const item = COLOR_PALETTE[key];
         return `
@@ -668,6 +685,7 @@
         btn.addEventListener('click', () => selectColorInPicker(btn.getAttribute('data-color')));
       });
 
+      // アイコン
       iconPickerGrid.innerHTML = Object.keys(ICON_PALETTE).map(key => {
         const item = ICON_PALETTE[key];
         return `
@@ -707,18 +725,17 @@
       });
     }
 
-    // ==================== LOCAL STORAGE BACKEND (Setting-free fallback) ====================
-    const LocalBackend = {
+    // ==================== LOCAL STORAGE DB (Fallback Mode) ====================
+    const LocalStorageEngine = {
       loadData: function() {
         try {
           folders = JSON.parse(localStorage.getItem('studyflow_folders') || '[]');
           sheets = JSON.parse(localStorage.getItem('studyflow_sheets') || '[]');
           
-          // 日付順ソート
           folders.sort((a, b) => b.createdAt - a.createdAt);
           sheets.sort((a, b) => b.createdAt - a.createdAt);
         } catch(e) {
-          console.error("Local data loading error, resetting storage.", e);
+          console.error("Local Storage parse error, resetting...", e);
           folders = [];
           sheets = [];
         }
@@ -754,20 +771,18 @@
         this.saveFolders();
         currentFolderId = newFolder.id;
         openFolderDetail(newFolder.id);
-        showToast("参考書を追加しました！", "success");
+        showToast("本棚に新しく参考書を追加しました！", "success");
       },
       updateFolder: function(id, title, desc, color, icon) {
         folders = folders.map(f => f.id === id ? { ...f, title, desc, color, icon } : f);
         this.saveFolders();
         const f = folders.find(folder => folder.id === id);
         if (f) renderFolderDetail(f);
-        showToast("参考書を更新しました", "success");
+        showToast("参考書情報を更新しました", "success");
       },
       deleteFolder: function(id) {
-        // 子シートも削除
         sheets = sheets.filter(s => s.folderId !== id);
         localStorage.setItem('studyflow_sheets', JSON.stringify(sheets));
-        // フォルダ削除
         folders = folders.filter(f => f.id !== id);
         this.saveFolders();
         switchView('home');
@@ -789,7 +804,7 @@
       updateSheet: function(id, title, total, unitType, desc, progress) {
         sheets = sheets.map(s => s.id === id ? { ...s, title, totalCount: total, unitType, desc, progress } : s);
         this.saveSheets();
-        showToast("シートを更新しました", "success");
+        showToast("シート情報を更新しました", "success");
       },
       deleteSheet: function(id) {
         sheets = sheets.filter(s => s.id !== id);
@@ -800,60 +815,51 @@
         } else {
           switchView('home');
         }
-        showToast("シートを削除しました", "info");
       },
       updateQuestion: function(sheetId, qNum, newStatus) {
-        sheets = sheets.map(s => {
-          if (s.id === sheetId) {
-            const progress = { ...s.progress };
-            const key = qNum.toString();
-            if (newStatus === 0) delete progress[key];
-            else progress[key] = newStatus;
-            return { ...s, progress };
-          }
-          return s;
-        });
-        this.saveSheets();
+        const sheet = sheets.find(s => s.id === sheetId);
+        if (sheet) {
+          const key = qNum.toString();
+          if (newStatus === 0) delete sheet.progress[key];
+          else sheet.progress[key] = newStatus;
+          this.saveSheets();
+        }
       },
       updateBulk: function(sheetId, start, end, action) {
-        sheets = sheets.map(s => {
-          if (s.id === sheetId) {
-            const progress = { ...s.progress };
-            for (let i = start; i <= end; i++) {
-              const key = i.toString();
-              if (action === 0) delete progress[key];
-              else progress[key] = action;
-            }
-            return { ...s, progress };
+        const sheet = sheets.find(s => s.id === sheetId);
+        if (sheet) {
+          for (let i = start; i <= end; i++) {
+            const key = i.toString();
+            if (action === 0) delete sheet.progress[key];
+            else sheet.progress[key] = action;
           }
-          return s;
-        });
-        this.saveSheets();
-        showToast(`${start}〜${end}を一括更新しました！`, "success");
+          this.saveSheets();
+          showToast("まとめて一括更新しました！", "success");
+        }
       }
     };
 
-    // ==================== STORAGE & REBOOT CONTROLLER ====================
-    const startApp = async () => {
+    // ==================== APP INITIALIZATION ENGINE ====================
+    const startAppEngine = async () => {
       buildPickers();
       
       if (storageMode === 'cloud' && firebaseConfig) {
-        // クラウド保存（Firebase）での接続確立を試みる
-        storageModeBadge.textContent = "クラウド同期モード";
-        storageModeBadge.className = "text-[9px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-600";
+        // クラウド保存設定が存在する場合
+        storageModeDot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse";
+        storageModeText.textContent = "クラウド同期中";
+        btnCloudStatus.className = "text-[9px] font-bold px-2 py-0.5 rounded-md transition flex items-center gap-1 hover:scale-105 active:scale-95 bg-emerald-50 text-emerald-700";
+        localModeBanner.classList.add('hidden');
         authTriggers.classList.remove('hidden');
 
         try {
-          // Firebaseアプリ初期化 & auth/db設定
           const app = initializeApp(firebaseConfig);
           auth = getAuth(app);
           db = getFirestore(app);
 
-          // プレビュー環境用初期カスタムトークン、または匿名サインイン (RULE 3)
+          // Rule 3: Auth First & Handle Custom Token VS Anonymous Sign In
           if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
             await signInWithCustomToken(auth, __initial_auth_token);
           } else {
-            // クラウド構成はあるがトークンがない場合は匿名ログインを開始
             await signInAnonymously(auth);
           }
 
@@ -869,46 +875,50 @@
             }
           });
 
-        } catch(e) {
-          console.error("Firebase connection failed. Forcing Local Fallback Mode.", e);
-          showToast("クラウド同期サーバーへの接続に失敗しました。ローカル保存に切り替えます。", "error");
-          enableLocalFallback();
+        } catch (e) {
+          console.error("Firebase connection error. Booting into Safe Local Mode.", e);
+          showToast("クラウド同期サーバーへの接続に失敗しました。ローカル保存モードで起動します。", "error");
+          bootIntoLocalMode();
         } finally {
           spinner.classList.add('hidden');
           appEl.classList.remove('hidden');
         }
 
       } else {
-        // ローカルストレージでの起動（GitHub Pagesなどでは即時こちらで起動）
-        enableLocalFallback();
+        // 設定がない場合（GitHub Pages初期起動など）はローカルモードでエラーなく即起動
+        bootIntoLocalMode();
       }
     };
 
-    function enableLocalFallback() {
+    function bootIntoLocalMode() {
       storageMode = 'local';
-      storageModeBadge.textContent = "ローカル保存モード";
-      storageModeBadge.className = "text-[9px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-500";
+      storageModeDot.className = "w-1.5 h-1.5 rounded-full bg-amber-500 inline-block animate-pulse";
+      storageModeText.textContent = "ローカル保存中";
+      btnCloudStatus.className = "text-[9px] font-bold px-2 py-0.5 rounded-md transition flex items-center gap-1 hover:scale-105 active:scale-95 bg-amber-50 text-amber-700";
+      localModeBanner.classList.remove('hidden');
       authTriggers.classList.add('hidden');
       userInfo.classList.add('hidden');
       
-      // ローカルストレージから即座に復元
-      LocalBackend.loadData();
+      LocalStorageEngine.loadData();
       
       spinner.classList.add('hidden');
       appEl.classList.remove('hidden');
     }
 
-    // ==================== FIRESTORE DATA SYNC ====================
+    // ==================== FIRESTORE REAL-TIME SYNCHRONIZER ====================
     let unsubscribeFoldersFn = null;
     let unsubscribeSheetsFn = null;
 
     function subscribeData(userId) {
+      if (!userId) return;
       if (unsubscribeFoldersFn) unsubscribeFoldersFn();
       if (unsubscribeSheetsFn) unsubscribeSheetsFn();
 
+      // Rule 1: STRICT FIREBASE PATHS
       const foldersCollection = collection(db, 'artifacts', appId, 'users', userId, 'folders');
       const sheetsCollection = collection(db, 'artifacts', appId, 'users', userId, 'sheets');
 
+      // Rule 2: No Complex Queries (Fetch all & sort in JavaScript memory)
       unsubscribeFoldersFn = onSnapshot(foldersCollection, (snapshot) => {
         folders = [];
         snapshot.forEach(doc => folders.push({ id: doc.id, ...doc.data() }));
@@ -936,7 +946,7 @@
       }, (err) => console.error("Sheets sync error:", err));
     }
 
-    // ==================== VIEW MANAGEMENT (PAGE NAVIGATION) ====================
+    // ==================== VIEW NAVIGATION CONTROLLER ====================
     function switchView(viewName) {
       currentView = viewName;
       if (viewName === 'home') {
@@ -1033,7 +1043,7 @@
       });
     }
 
-    // ==================== UI RENDERING: FOLDER VIEW (参考書の中身) ====================
+    // ==================== UI RENDERING: FOLDER VIEW (参考書詳細) ====================
     function openFolderDetail(id) {
       currentFolderId = id;
       const folder = folders.find(f => f.id === id);
@@ -1110,7 +1120,7 @@
       });
     }
 
-    // ==================== UI RENDERING: SHEET VIEW (個別進捗グリッド) ====================
+    // ==================== UI RENDERING: SHEET VIEW (チェックグリッド) ====================
     function openSheetDetail(sheetId) {
       currentSheetId = sheetId;
       currentFilter = 'all';
@@ -1204,7 +1214,6 @@
       });
     });
 
-    // チェックシートグリッドの描画
     function renderGrid(sheet, total, unit) {
       checksheetGrid.innerHTML = '';
       const progress = sheet.progress || {};
@@ -1251,10 +1260,10 @@
       }
     }
 
-    // ★重要バグ修正: トランザクション的確実アップデート (単体) ★
+    // ★重要：トランザクション的確実アップデート (単体タップ) ★
     async function updateQuestionStatus(sheetId, qNum, newStatus) {
       if (storageMode === 'local') {
-        LocalBackend.updateQuestion(sheetId, qNum, newStatus);
+        LocalStorageEngine.updateQuestion(sheetId, qNum, newStatus);
         return;
       }
 
@@ -1268,23 +1277,21 @@
           const newProgress = data.progress ? { ...data.progress } : {};
           const key = qNum.toString();
           
-          if (newStatus === 0) {
-            delete newProgress[key];
-          } else {
-            newProgress[key] = newStatus;
-          }
+          if (newStatus === 0) delete newProgress[key];
+          else newProgress[key] = newStatus;
+          
           await updateDoc(sheetRef, { progress: newProgress });
         }
       } catch (err) {
-        console.error("Single update error:", err);
-        showToast("更新に失敗しました", "error");
+        console.error("Firestore update error:", err);
+        showToast("データの同期に失敗しました", "error");
       }
     }
 
     // ==================== WORKFLOW: CRUD FOLDER ====================
     btnAddFolder.addEventListener('click', () => {
       editingFolderId = null;
-      modalFolderTitle.textContent = "参考書の追加";
+      modalFolderTitle.textContent = "参考書の登録";
       inputFolderTitle.value = "";
       inputFolderDesc.value = "";
       selectColorInPicker('indigo');
@@ -1311,7 +1318,7 @@
 
       if (confirm(`本当に「${folder.title}」を削除しますか？\n中に入っているすべての進捗シートとチェックデータも完全に削除されます。`)) {
         if (storageMode === 'local') {
-          LocalBackend.deleteFolder(currentFolderId);
+          LocalStorageEngine.deleteFolder(currentFolderId);
           return;
         }
 
@@ -1347,9 +1354,9 @@
 
       if (storageMode === 'local') {
         if (editingFolderId) {
-          LocalBackend.updateFolder(editingFolderId, title, desc, color, icon);
+          LocalStorageEngine.updateFolder(editingFolderId, title, desc, color, icon);
         } else {
-          LocalBackend.addFolder(title, desc, color, icon);
+          LocalStorageEngine.addFolder(title, desc, color, icon);
         }
         modalFolder.classList.add('hidden');
         return;
@@ -1426,7 +1433,7 @@
 
       if (confirm(`進捗シート「${sheet.title}」を削除してよろしいですか？記録データも消失します。`)) {
         if (storageMode === 'local') {
-          LocalBackend.deleteSheet(currentSheetId);
+          LocalStorageEngine.deleteSheet(currentSheetId);
           return;
         }
 
@@ -1482,9 +1489,9 @@
           for (let k in prog) {
             if (parseInt(k) <= total) cleanProg[k] = prog[k];
           }
-          LocalBackend.updateSheet(editingSheetId, title, total, unitValue, desc, cleanProg);
+          LocalStorageEngine.updateSheet(editingSheetId, title, total, unitValue, desc, cleanProg);
         } else {
-          LocalBackend.addSheet(currentFolderId, title, total, unitValue, desc);
+          LocalStorageEngine.addSheet(currentFolderId, title, total, unitValue, desc);
         }
         modalSheet.classList.add('hidden');
         return;
@@ -1548,7 +1555,7 @@
 
       if (confirm(`${start}〜${end}${unit}を一括変更してよろしいですか？`)) {
         if (storageMode === 'local') {
-          LocalBackend.updateBulk(currentSheetId, start, end, action);
+          LocalStorageEngine.updateBulk(currentSheetId, start, end, action);
           bulkStart.value = '';
           bulkEnd.value = '';
           return;
@@ -1592,12 +1599,16 @@
     });
 
     // ==================== ADVANCED: FIREBASE CONNECTION SETTINGS ====================
-    btnOpenDbSettings.addEventListener('click', () => {
+    function openFirebaseSettings() {
       const currentConfig = localStorage.getItem('studyflow_custom_firebase_config') || '';
       dbSettingsConfigInput.value = currentConfig;
       modalDbSettings.classList.remove('hidden');
-    });
+    }
 
+    btnOpenDbSettings.addEventListener('click', openFirebaseSettings);
+    btnBannerSetup.addEventListener('click', openFirebaseSettings);
+    btnCloudStatus.addEventListener('click', openFirebaseSettings);
+    
     btnCloseDbSettings.addEventListener('click', () => modalDbSettings.classList.add('hidden'));
     btnCancelDbSettings.addEventListener('click', () => modalDbSettings.classList.add('hidden'));
 
@@ -1619,7 +1630,6 @@
       }
 
       try {
-        // 入力したJSONのパースが通るかテスト
         const configJson = JSON.parse(configStr);
         if (!configJson.apiKey || !configJson.projectId) {
           throw new Error("Required fields 'apiKey' or 'projectId' are missing.");
@@ -1627,7 +1637,7 @@
 
         localStorage.setItem('studyflow_custom_firebase_config', configStr);
         modalDbSettings.classList.add('hidden');
-        showToast("設定を保存しました！再起動します...", "success");
+        showToast("設定を保存しました！同期を確立するために再起動します...", "success");
         setTimeout(() => location.reload(), 1200);
 
       } catch(err) {
@@ -1638,9 +1648,9 @@
 
     // 起動
     window.onload = () => {
-      startApp();
+      startAppEngine();
     };
 
   </script>
 </body>
-</html>
+</html> 
